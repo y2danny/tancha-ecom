@@ -1,0 +1,111 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Brand — pulled from the Tancha mark: deep navy body, brighter blue swoosh */
+  --color-navy-50: #eef4fb;
+  --color-navy-100: #d6e5f6;
+  --color-navy-200: #aeccec;
+  --color-navy-300: #7dabdd;
+  --color-navy-400: #4a85c9;
+  --color-navy-500: #2a66ae;
+  --color-navy-600: #1e5089;
+  --color-navy-700: #17406e;
+  --color-navy-800: #133458;
+  --color-navy-900: #0f2946;
+  --color-navy-950: #091b30;
+
+  /* Deal accent — urgency without becoming a Jumia knockoff */
+  --color-gold-50: #fff8e8;
+  --color-gold-100: #ffeec2;
+  --color-gold-200: #ffdd87;
+  --color-gold-300: #ffc94a;
+  --color-gold-400: #fdb51f;
+  --color-gold-500: #f0a007;
+  --color-gold-600: #cc7a02;
+  --color-gold-700: #a35706;
+  --color-gold-800: #86440d;
+  --color-gold-900: #723911;
+
+  --color-flash: #e0332f;
+  --color-flash-dark: #b4211d;
+
+  --color-ink: #16202e;
+  --color-muted: #667487;
+  --color-hairline: #e4e8ee;
+  --color-canvas: #f1f3f6;
+
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --shadow-card: 0 1px 2px rgb(16 32 46 / 0.06), 0 1px 3px rgb(16 32 46 / 0.04);
+  --shadow-lift: 0 8px 24px rgb(16 32 46 / 0.12);
+  --shadow-panel: 0 20px 48px rgb(9 27 48 / 0.18);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Nigerian ecom shoppers scan dense grids — keep numerals aligned */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-navy-500);
+    outline-offset: 2px;
+  }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility line-clamp-2-safe {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@keyframes tancha-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tancha-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgb(240 160 7 / 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgb(240 160 7 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(240 160 7 / 0);
+  }
+}
+
+.animate-rise {
+  animation: tancha-rise 0.24s ease-out both;
+}
+
+.animate-pulse-ring {
+  animation: tancha-pulse-ring 2.4s ease-out infinite;
+}
