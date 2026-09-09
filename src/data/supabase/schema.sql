@@ -243,6 +243,20 @@ alter table chat_messages       enable row level security;
 alter table settings            enable row level security;
 alter table role_audit          enable row level security;
 
+-- RLS decides WHICH ROWS a role can touch, but Postgres still checks plain
+-- table-level GRANTs first — without these, every request from anon/
+-- authenticated fails with "permission denied for table X" before RLS is
+-- even evaluated. This is a separate, more basic layer than RLS. The actual
+-- security boundary stays the policies below: a broad GRANT here, combined
+-- with restrictive RLS, is the standard, documented Supabase pattern (it's
+-- exactly what Postgres's own error message recommends doing).
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on all tables in schema public to anon, authenticated;
+grant usage, select on all sequences in schema public to anon, authenticated;
+-- So any table added later doesn't silently reintroduce this bug.
+alter default privileges in schema public grant select, insert, update, delete on tables to anon, authenticated;
+alter default privileges in schema public grant usage, select on sequences to anon, authenticated;
+
 -- Profiles: you see yourself; staff see everyone; only owner changes roles.
 create policy profiles_self_read on profiles for select
   using (id = auth.uid() or current_role_is(array['owner','admin','support_agent']::app_role[]));

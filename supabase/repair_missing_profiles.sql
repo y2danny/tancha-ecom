@@ -1,17 +1,20 @@
 -- Ensure the schema actually landed in full.
 --
 -- Use this if the app ever says "Signed in, but your profile row was not
--- found" — the usual cause is schema.sql erroring out partway through its
--- first run (Supabase's SQL editor buries the error in small red text,
--- easy to miss) and never reaching later statements: RLS policies, or the
--- handle_new_user trigger at the very bottom.
+-- found," or any Supabase request comes back "permission denied for table
+-- X" — the usual cause is schema.sql erroring out partway through its first
+-- run (Supabase's SQL editor buries the error in small red text, easy to
+-- miss) and never reaching later statements: the base table grants, RLS
+-- policies, or the handle_new_user trigger at the very bottom. (Base table
+-- grants are a separate, more basic layer than RLS — Postgres checks them
+-- FIRST, so even flawless RLS policies do nothing without them.)
 --
 -- This is the entire "Row Level Security" + "Triggers" section of
 -- schema.sql, rewritten to be safe to re-run any number of times
 -- (`drop ... if exists` before every `create`), plus a one-time backfill of
 -- any auth.users row that's missing its profiles row. Running this does
--- NOT touch table structure or existing data — only policies, triggers, and
--- missing profile rows.
+-- NOT touch table structure or existing data — only grants, policies,
+-- triggers, and missing profile rows.
 --
 -- If you get a "relation ... does not exist" error running this, the table
 -- creation itself didn't complete — re-paste the full schema.sql first
@@ -34,6 +37,15 @@ alter table chat_sessions       enable row level security;
 alter table chat_messages       enable row level security;
 alter table settings            enable row level security;
 alter table role_audit          enable row level security;
+
+-- ── Base table grants (a separate layer from RLS — Postgres checks these
+--    FIRST, and without them every request fails with "permission denied
+--    for table X" no matter how correct the RLS policies are) ──────────────
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on all tables in schema public to anon, authenticated;
+grant usage, select on all sequences in schema public to anon, authenticated;
+alter default privileges in schema public grant select, insert, update, delete on tables to anon, authenticated;
+alter default privileges in schema public grant usage, select on sequences to anon, authenticated;
 
 -- ── Helper function every policy below depends on ────────────────────────────
 create or replace function current_role_is(roles app_role[])
@@ -184,6 +196,9 @@ create trigger order_status_logged
   after update on orders for each row execute function log_order_status();
 
 -- ── Backfill: any auth.users row still missing a profiles row ───────────────
+-- (No-op if you already ran the narrower version of this fix — `on conflict
+-- do nothing` above and the `left join ... where p.id is null` below both
+-- make this safe to run again.)
 with missing as (
   select u.id, u.email, u.created_at,
          row_number() over (order by u.created_at) as rn
