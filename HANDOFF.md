@@ -51,10 +51,17 @@ The four functions in `supabase/functions/` (`checkout`, `paystack-webhook`,
 orders, confirm payments, or invite staff — they run with the service-role
 key so they can bypass RLS deliberately, in the one place that's supposed to.
 
+Run these from the project root (`C:\Users\USER\Downloads\tancha` — the same
+folder `supabase/functions/` lives in):
+
 ```bash
 npm install -g supabase        # Supabase CLI, one-time
-supabase login
-supabase link --project-ref <your-project-ref>      # from the project URL
+supabase init                  # one-time — creates supabase/config.toml;
+                                # answer the prompts with defaults, it will
+                                # not touch the functions/ folder that's
+                                # already there
+supabase login                 # opens a browser to authenticate the CLI
+supabase link --project-ref oweyocwbtodadbxtsltv
 supabase functions deploy checkout
 supabase functions deploy paystack-webhook
 supabase functions deploy order-lookup
