@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { site } from '@/config/site'
+import { useSeo } from '@/lib/seo'
 
 const CONTENT: Record<string, { title: string; blocks: [string, string][] }> = {
   help: {
@@ -31,6 +32,7 @@ const CONTENT: Record<string, { title: string; blocks: [string, string][] }> = {
 
 export function StaticPage({ page }: { page: keyof typeof CONTENT }) {
   const content = CONTENT[page]
+  useSeo({ title: content.title, noindex: page === 'account' })
   return (
     <div className="mx-auto max-w-2xl px-3 py-8 sm:px-4">
       <h1 className="text-2xl font-extrabold tracking-tight">{content.title}</h1>

@@ -37,6 +37,8 @@ export interface CartTotals {
 
 export interface DeliveryAddress {
   fullName: string
+  /** Required to pay by Paystack — it needs somewhere to send the receipt. */
+  email?: string
   phone: string
   altPhone?: string
   city: string

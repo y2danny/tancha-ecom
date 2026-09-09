@@ -96,9 +96,16 @@ export function Footer() {
         </div>
 
         <div className="border-t border-white/10">
-          <div className="mx-auto flex max-w-[1400px] flex-col gap-2 px-4 py-4 text-xs text-navy-300 sm:flex-row sm:items-center sm:justify-between">
+          {/* pr reserves room for the fixed chat bubble, which otherwise sits
+              on top of this row whenever a short page pins the footer to the
+              bottom of the viewport (empty cart, legal pages, 404). */}
+          <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-4 pr-4 text-xs text-navy-300 sm:flex-row sm:items-center sm:justify-between sm:pr-20">
             <p>© {new Date().getFullYear()} {site.name}. All rights reserved.</p>
-            <p>Prices in Naira (₦). Deals end when the timer does.</p>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/legal/privacy" className="hover:text-white">Privacy Policy</Link>
+              <Link to="/legal/terms" className="hover:text-white">Terms of Service</Link>
+              <Link to="/legal/returns" className="hover:text-white">Returns &amp; Refunds</Link>
+            </div>
           </div>
         </div>
       </div>

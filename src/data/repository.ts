@@ -7,6 +7,7 @@ import type {
   Review,
 } from '@/types/catalog'
 import type { Order, CheckoutDraft, CartLine } from '@/types/commerce'
+import type { AdminRepository } from '@/types/admin'
 
 /**
  * The seam. Every screen talks to these interfaces and nothing else, so
@@ -31,7 +32,16 @@ export interface DealRepository {
 }
 
 export interface OrderRepository {
-  placeOrder(input: { lines: CartLine[]; draft: CheckoutDraft }): Promise<Order>
+  /**
+   * Client-side call only. The mock client creates the order directly; the
+   * Supabase client posts to the `/checkout` Edge Function, which re-prices
+   * the cart from the live product table and is the only thing ever allowed
+   * to write a row into `orders`.
+   */
+  placeOrder(input: {
+    lines: CartLine[]
+    draft: CheckoutDraft
+  }): Promise<{ order: Order; authorizationUrl?: string }>
   getOrder(reference: string): Promise<Order | null>
 }
 
@@ -39,4 +49,7 @@ export interface DataClient {
   catalog: CatalogRepository
   deals: DealRepository
   orders: OrderRepository
+  admin: AdminRepository
 }
+
+export type { AdminRepository } from '@/types/admin'

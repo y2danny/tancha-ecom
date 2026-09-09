@@ -2,12 +2,14 @@ import { Link } from 'react-router-dom'
 import { ShoppingCart, Trash2, Truck } from 'lucide-react'
 import { useCart } from '@/store/cart'
 import { useResolvedCart } from '@/hooks/useResolvedCart'
+import { useSeo } from '@/lib/seo'
 import { ProductImage } from '@/components/product/ProductImage'
 import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { ButtonLink } from '@/components/ui/Button'
 import { formatNaira } from '@/lib/format'
 
 export function CartPage() {
+  useSeo({ title: 'Your Cart', noindex: true })
   const { setQuantity, remove, clear } = useCart()
   const { lines, totals, loading } = useResolvedCart()
 
@@ -74,7 +76,7 @@ export function CartPage() {
                     <button
                       type="button"
                       onClick={() => remove(line.productId, line.variantId)}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-flash hover:underline"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-flash-dark hover:underline"
                     >
                       <Trash2 size={14} />
                       Remove
@@ -101,7 +103,7 @@ export function CartPage() {
             <button
               type="button"
               onClick={clear}
-              className="text-sm font-semibold text-muted hover:text-flash"
+              className="text-sm font-semibold text-muted hover:text-flash-dark"
             >
               Clear cart
             </button>

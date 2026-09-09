@@ -1,19 +1,41 @@
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { CheckCircle2, MessageCircle, Package, Truck } from 'lucide-react'
+import { CheckCircle2, Clock, MessageCircle, Package, Truck } from 'lucide-react'
 import { db } from '@/data'
 import { useAsync } from '@/hooks/useAsync'
 import { formatDeliveryWindow, formatNaira, toWhatsAppNumber } from '@/lib/format'
+import { useSeo } from '@/lib/seo'
 import { site } from '@/config/site'
 import { ButtonLink } from '@/components/ui/Button'
 import type { Order } from '@/types/commerce'
 
+/** Paystack's redirect lands here before the webhook has necessarily landed —
+ *  poll briefly rather than telling the customer "confirmed" too early. */
+function usePolledOrder(reference: string | undefined) {
+  const { data, loading } = useAsync(() => db.orders.getOrder(reference ?? ''), [reference], null as Order | null)
+  const [order, setOrder] = useState<Order | null>(data)
+
+  useEffect(() => setOrder(data), [data])
+
+  useEffect(() => {
+    if (!order || order.status !== 'pending_payment') return
+    let tries = 0
+    const id = window.setInterval(async () => {
+      tries += 1
+      const fresh = await db.orders.getOrder(reference ?? '')
+      if (fresh && fresh.status !== 'pending_payment') setOrder(fresh)
+      if (tries >= 10) window.clearInterval(id)
+    }, 3000)
+    return () => window.clearInterval(id)
+  }, [order, reference])
+
+  return { order, loading }
+}
+
 export function OrderConfirmationPage() {
+  useSeo({ title: 'Order Confirmation', noindex: true })
   const { reference } = useParams<{ reference: string }>()
-  const { data: order, loading } = useAsync(
-    () => db.orders.getOrder(reference ?? ''),
-    [reference],
-    null as Order | null,
-  )
+  const { order, loading } = usePolledOrder(reference)
 
   if (loading) {
     return <div className="mx-auto max-w-2xl px-4 py-24 text-center text-sm text-muted">Loading your order…</div>
@@ -33,19 +55,25 @@ export function OrderConfirmationPage() {
     )
   }
 
-  const paying = order.paymentMethod === 'paystack'
+  const pending = order.status === 'pending_payment'
 
   return (
     <div className="mx-auto max-w-2xl px-3 py-8 sm:px-4">
       <div className="rounded-md bg-white p-6 text-center shadow-card sm:p-8">
-        <CheckCircle2 className="mx-auto text-emerald-500" size={56} />
+        {pending ? (
+          <Clock className="mx-auto animate-pulse text-gold-500" size={56} />
+        ) : (
+          <CheckCircle2 className="mx-auto text-emerald-500" size={56} />
+        )}
         <h1 className="mt-4 text-2xl font-extrabold tracking-tight">
-          {paying ? 'Order placed — payment next' : 'Order confirmed'}
+          {pending ? 'Waiting for payment confirmation' : 'Order confirmed'}
         </h1>
         <p className="mt-2 text-sm text-muted">
-          {paying
-            ? 'In production this is where Paystack opens. The order is held until the webhook confirms payment.'
-            : 'Our rep will call to confirm before dispatch. Have the cash or transfer ready for the rider.'}
+          {pending
+            ? 'Paystack says you paid — we are waiting for the final confirmation from our side. This page updates itself, no need to refresh.'
+            : order.paymentMethod === 'pay_on_delivery'
+              ? 'Our rep will call to confirm before dispatch. Have the cash or transfer ready for the rider.'
+              : 'Payment received. Your order is being prepared.'}
         </p>
 
         <div className="mt-5 inline-flex flex-col items-center rounded-md bg-navy-50 px-6 py-3">

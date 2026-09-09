@@ -83,7 +83,7 @@ export function ProductCard({
             </div>
 
             {lowStock ? (
-              <p className="text-[0.7rem] font-semibold text-flash">
+              <p className="text-[0.7rem] font-semibold text-flash-dark">
                 Only {product.stock} left at this price
               </p>
             ) : (

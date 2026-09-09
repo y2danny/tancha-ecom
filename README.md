@@ -1,4 +1,4 @@
-# Tancha — storefront
+# Tancha — ecommerce platform
 
 Back-to-school ecommerce for Nigeria. React 19 + Vite + TypeScript + Tailwind v4.
 
@@ -6,85 +6,113 @@ Back-to-school ecommerce for Nigeria. React 19 + Vite + TypeScript + Tailwind v4
 npm install
 npm run dev      # http://localhost:5173
 npm run build    # tsc -b && vite build
+npm run lint
 ```
+
+Runs with **zero configuration** against an in-memory mock backend (seeded
+demo catalog, orders, deals, staff accounts) — see [Demo / mock mode](#demo--mock-mode)
+below. Point it at a real Supabase project (see [`HANDOFF.md`](./HANDOFF.md))
+and it switches to the live backend with no code changes.
 
 ## What is built
 
-The **storefront**, end to end: homepage with rotating deal strips and live
-countdowns, category listing with filters and sort, product detail with
-variants and reviews, cart, checkout (Paystack / pay-on-delivery UI), order
-confirmation, deals page, and a persistent AI chat widget that escalates to
-WhatsApp.
+**Storefront:** homepage with rotating deal strips and live countdowns,
+category listing with filters and sort, product detail with variants and
+reviews, cart, checkout (Paystack + pay-on-delivery), order confirmation with
+live status polling, deals page, legal pages (privacy / terms / returns), a
+real 404 page, and a persistent AI chat widget that escalates to WhatsApp.
 
-Not built yet: the admin console (a placeholder page documents the modules and
-roles) and the Supabase backend. Both are designed for — see below.
+**Admin console** (`/admin`, role-gated, code-split from the storefront
+bundle): dashboard (today's orders/revenue, low-stock alerts), product
+catalog CRUD, inventory adjustments with an audit trail, deals scheduling,
+order management with status updates, and team management (invite staff,
+assign roles).
+
+**Backend** (Supabase): Postgres schema with row-level security enforcing
+every role boundary at the database layer, plus four Edge Functions —
+`checkout` (server-side re-pricing and stock validation — the client never
+sends a total), `paystack-webhook` (HMAC-verified payment confirmation —
+never trusts the browser redirect), `order-lookup` (guest order lookup by
+reference), `invite-team-member` (owner-only staff invites).
+
+**Cross-cutting:** per-route SEO (meta tags, JSON-LD product markup,
+robots.txt, sitemap.xml, `noindex` on private routes), WCAG AA colour
+contrast, keyboard focus states, and a GitHub Actions CI workflow that lints
+and type-checks/builds on every push.
+
+Nothing is a placeholder. Everything above works end to end in mock mode
+today, and against live Supabase/Paystack once configured — see
+[`HANDOFF.md`](./HANDOFF.md) for exact setup steps.
 
 ## Architecture — the parts that matter later
 
 ```
 src/
-  types/         domain models: catalog, commerce, identity (roles), support
+  types/          domain models: catalog, commerce, identity (roles), admin, support
   data/
-    repository.ts  interfaces every screen talks to — the seam
-    index.ts       picks the implementation (one line changes for Supabase)
-    mock/          in-memory catalog, deals, orders
-    supabase/      schema.sql + notes; the production data model
-  store/cart.tsx localStorage-backed cart, price snapshotted at add time
-  components/    ui primitives, layout, product, brand, support
-  features/      one folder per page
+    repository.ts   DataClient interface — the seam every screen talks to
+    index.ts         picks mock vs Supabase, based on whether env vars are set
+    mock/             in-memory catalog, deals, orders, team (localStorage-backed)
+    supabase/         schema.sql + the live DataClient implementation
+    auth/             AuthClient interface; mock vs Supabase auth, same seam pattern
+  store/            cart.tsx (localStorage cart), auth.tsx (session + role context)
+  components/       ui primitives, layout, product, brand, support
+  features/         one folder per page area (catalog, cart, checkout, admin, legal, ...)
+supabase/
+  functions/        Deno Edge Functions — checkout, paystack-webhook, order-lookup, invite-team-member
 ```
 
-**No component imports mock data for business logic.** They call `db.catalog`,
-`db.deals`, `db.orders`. Swapping in Supabase is a new file implementing
-`DataClient` plus one line in `src/data/index.ts`.
+**No component imports mock or Supabase code directly.** Every screen calls
+`db.catalog`, `db.deals`, `db.orders`, `db.admin`, or `useAuth()`. The two
+backends are interchangeable because they implement the same
+`DataClient`/`AuthClient` interfaces.
 
 ### Rules baked in on purpose
 
-- **Money is integer kobo.** `formatNaira()` is the only thing that renders it.
-  Paystack works in kobo; floats and currency do not mix.
-- **Cart lines snapshot their unit price.** A price change mid-session must not
-  silently reprice someone's cart.
+- **Money is integer kobo everywhere.** `formatNaira()` is the only thing that
+  renders it. Paystack is kobo-denominated; floats and currency do not mix.
+- **The client never computes or sends an order total.** The `checkout` Edge
+  Function re-prices every line from the live database and is the sole
+  source of truth. A tampered client request cannot produce a cheaper order.
+- **A payment is only confirmed by Paystack's webhook**, verified by
+  HMAC-SHA512 signature. The post-payment redirect is a UX convenience, never
+  proof of payment — it can be closed, skipped, or faked.
+- **Cart lines snapshot their unit price.** A price change mid-session must
+  not silently reprice someone's cart.
 - **Roles are defined in `types/identity.ts` and enforced in Postgres RLS**
-  (`data/supabase/schema.sql`), not in React. A leaked anon key must not be able
-  to write a product row.
-- **The assistant is behind `AssistantProvider`.** Today it answers from the live
-  catalog locally; tomorrow it is a fetch to an Edge Function calling a model.
-  The widget does not change.
+  (`data/supabase/schema.sql`), not in React. A leaked anon key must not be
+  able to write a product row or read another customer's order.
+- **The assistant is behind `AssistantProvider`.** Today it answers from the
+  live catalog locally; swapping it for a model-backed one is a provider
+  change, not a rewrite of the widget.
 
-## Next, in order
+## Demo / mock mode
 
-1. Provision Supabase, run `src/data/supabase/schema.sql`, implement
-   `DataClient` against it.
-2. `/checkout` Edge Function: re-price the cart server-side, create the order,
-   init the Paystack transaction. Never trust a client-supplied total.
-3. `/paystack-webhook`: verify `x-paystack-signature`, then mark paid and
-   decrement inventory. The redirect is not proof of payment.
-4. Admin console — products, inventory, deals, orders, team.
-5. Swap the local assistant for the model-backed one; add the agent inbox.
+With no `VITE_SUPABASE_URL` set, the app runs entirely client-side against
+seeded in-memory/localStorage data — useful for demos, and what CI builds
+against. Staff sign-in at `/admin/login` in this mode accepts three demo
+accounts (shown on the login screen itself):
+
+| Email | Password | Role |
+| --- | --- | --- |
+| owner@tancha.ng | tancha-demo | owner |
+| admin@tancha.ng | tancha-demo | admin |
+| support@tancha.ng | tancha-demo | support_agent |
+
+Orders placed in mock mode always settle as "confirmed" immediately (there is
+no real payment gateway to wait on). Clearing site data resets everything.
 
 ## Product imagery
 
 Products render vector illustrations keyed off `imageKey` until the client
-supplies photography. Set `product.imageUrl` and the photo takes over — no code
-change.
+supplies photography. Set `product.imageUrl` and the photo takes over — no
+code change. The brand mark is `components/brand/Logo.tsx`, backed by
+`public/logo-mark.png` (colour) and `public/logo-mark-white.png` (for dark
+surfaces); drop in a vector original at `public/logo.svg` and repoint
+`Logo.tsx`'s `SRC` map to it if one is ever produced.
 
-## The logo
+## Setup, deployment, and handoff
 
-`public/logo.png` is the client's original. The white background is keyed out
-and the mark trimmed into three derived assets:
-
-| File | Use |
-| --- | --- |
-| `public/logo-mark.png` | brand-blue mark, transparent |
-| `public/logo-mark-white.png` | monochrome, for dark surfaces |
-| `public/favicon.png` | browser tab and home-screen icon |
-
-`components/brand/Logo.tsx` exposes `variant="chip" | "white" | "blue"`. The
-mark is mid-blue line art and vanishes against the navy header, so the primary
-lockup sits the real mark in a white chip — brand colour intact, reads like an
-app icon. Secondary surfaces (footer, chat avatar) use the white variant. Size
-is an inline style, not a Tailwind class, because two competing `h-*` classes
-are resolved by stylesheet order rather than the order you wrote them.
-
-If the client ever produces a vector original, drop it in and point the three
-`SRC` paths at it — nothing else changes.
+See [`HANDOFF.md`](./HANDOFF.md) for the full runbook: creating the Supabase
+project, running the schema, deploying the Edge Functions, Paystack keys and
+webhook registration, environment variables, and deploying to Vercel.

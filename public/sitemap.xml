@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Static routes only. Product and deal pages are intentionally left out —
+  once the catalog is live in Supabase, generate this file at deploy time
+  from the `products` table (slug, updated_at) instead of hand-maintaining
+  it. See README.md → "Handoff" for the exact query.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://tancha.ng/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://tancha.ng/deals</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://tancha.ng/c/school-bags</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://tancha.ng/c/books-stationery</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://tancha.ng/c/study-tech</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://tancha.ng/c/audio-power</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://tancha.ng/c/uniforms-footwear</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://tancha.ng/c/lunch-hydration</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://tancha.ng/help</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://tancha.ng/legal/privacy</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
+  <url><loc>https://tancha.ng/legal/terms</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
+  <url><loc>https://tancha.ng/legal/returns</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
+</urlset>

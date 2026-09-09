@@ -189,7 +189,7 @@ export function Header() {
           ))}
           <Link
             to="/deals"
-            className="ml-auto flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold text-flash"
+            className="ml-auto flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold text-flash-dark"
           >
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-flash" />
             Today&apos;s Deals
@@ -212,7 +212,7 @@ export function Header() {
           <Link
             to="/deals"
             onClick={() => setMenuOpen(false)}
-            className="block px-4 py-3 text-sm font-bold text-flash"
+            className="block px-4 py-3 text-sm font-bold text-flash-dark"
           >
             Today&apos;s Deals
           </Link>

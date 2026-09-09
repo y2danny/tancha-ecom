@@ -241,6 +241,7 @@ alter table order_events        enable row level security;
 alter table chat_sessions       enable row level security;
 alter table chat_messages       enable row level security;
 alter table settings            enable row level security;
+alter table role_audit          enable row level security;
 
 -- Profiles: you see yourself; staff see everyone; only owner changes roles.
 create policy profiles_self_read on profiles for select
@@ -311,6 +312,13 @@ create policy chat_messages_own on chat_messages for all
 create policy settings_public_read on settings for select using (true);
 create policy settings_owner_write on settings for all
   using (current_role_is(array['owner']::app_role[]))
+  with check (current_role_is(array['owner']::app_role[]));
+
+-- Role changes are owner-only and the audit trail is owner-only to read —
+-- this table has no public grant of any kind.
+create policy role_audit_owner_read on role_audit for select
+  using (current_role_is(array['owner']::app_role[]));
+create policy role_audit_owner_insert on role_audit for insert
   with check (current_role_is(array['owner']::app_role[]));
 
 -- ============================================================================

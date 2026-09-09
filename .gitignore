@@ -23,14 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# Supabase / env secrets — never commit real keys
+# Environment secrets — never commit real Supabase/Paystack keys
 .env
 .env.local
 .env.*.local
+
+# Supabase CLI local state
 supabase/.temp
-
-# Leftover from a cleanup earlier in the build — safe to delete by hand
-_node_modules_stale
-
-# Screenshot drops, not app source
-Claude outputs/

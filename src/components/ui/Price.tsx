@@ -25,7 +25,7 @@ export function Price({
       {off > 0 && (
         <>
           <span className="text-xs text-muted line-through tabular">{formatNaira(compareAtKobo!)}</span>
-          <span className="rounded bg-flash/10 px-1 text-[0.68rem] font-bold text-flash tabular">-{off}%</span>
+          <span className="rounded bg-flash/10 px-1 text-[0.68rem] font-bold text-flash-dark tabular">-{off}%</span>
         </>
       )}
     </span>

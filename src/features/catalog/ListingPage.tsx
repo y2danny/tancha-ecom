@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { db } from '@/data'
 import { useAsync } from '@/hooks/useAsync'
+import { useSeo } from '@/lib/seo'
 import { ProductGrid } from '@/components/product/ProductGrid'
 import { Filters } from './Filters'
 import { Button } from '@/components/ui/Button'
@@ -48,6 +49,8 @@ export function ListingPage({ mode }: { mode: 'category' | 'search' }) {
       : searchTerm
         ? `Results for “${searchTerm}”`
         : 'All products'
+
+  useSeo({ title, description: category ? `Shop ${category.name.toLowerCase()} — producer-direct prices, nationwide delivery.` : undefined })
 
   return (
     <div className="mx-auto max-w-[1400px] px-3 py-4 sm:px-4">

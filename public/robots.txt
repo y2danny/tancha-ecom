@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /cart
+Disallow: /checkout
+Disallow: /order/
+Disallow: /account
+
+Sitemap: https://tancha.ng/sitemap.xml

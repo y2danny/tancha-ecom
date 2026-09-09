@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { db } from '@/data'
 import { useAsync } from '@/hooks/useAsync'
+import { useSeo, useProductJsonLd } from '@/lib/seo'
 import { useCart } from '@/store/cart'
 import { ProductImage } from '@/components/product/ProductImage'
 import { ProductRail } from '@/components/product/ProductGrid'
@@ -86,6 +87,9 @@ export function ProductPage() {
     [product?.id],
     [],
   )
+
+  useSeo({ title: product?.name, description: product?.hook })
+  useProductJsonLd(product)
 
   useEffect(() => {
     setVariant(null)
@@ -190,7 +194,7 @@ export function ProductPage() {
             <div className="mt-4 border-t border-hairline pt-4">
               <Price kobo={activePrice} compareAtKobo={product.compareAtKobo} size="lg" />
               {activeStock <= 15 && activeStock > 0 && (
-                <p className="mt-1.5 text-sm font-semibold text-flash">
+                <p className="mt-1.5 text-sm font-semibold text-flash-dark">
                   Only {activeStock} left at this price
                 </p>
               )}
@@ -200,7 +204,7 @@ export function ProductPage() {
               <div className="mt-4">
                 <p className="mb-2 text-sm font-bold">
                   {product.variants[0].optionName}
-                  {needsVariant && <span className="ml-2 text-xs font-normal text-flash">Please select</span>}
+                  {needsVariant && <span className="ml-2 text-xs font-normal text-flash-dark">Please select</span>}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {product.variants.map((v) => (

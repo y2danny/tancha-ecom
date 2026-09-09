@@ -7,6 +7,8 @@ import { categories, categoryBySlug } from './categories'
 import { products, productById, productBySlug } from './products'
 import { deals, reviewsFor } from './deals'
 import { site } from '@/config/site'
+import { mockAdmin } from './admin'
+import * as orderStore from './orderStore'
 
 /** Simulated latency so loading states are real rather than theoretical. */
 const wait = <T,>(value: T, ms = 140): Promise<T> =>
@@ -133,16 +135,17 @@ function totalsFor(lines: CartLine[]): CartTotals {
   }
 }
 
-const placed = new Map<string, Order>()
-
 const orders: OrderRepository = {
   async placeOrder({ lines, draft }) {
     const reference = `TCH-${Date.now().toString(36).toUpperCase().slice(-6)}`
     const now = new Date()
+    // No real Paystack in mock mode — both methods confirm immediately so the
+    // storefront demo has a complete order to show. The Supabase client's
+    // `placeOrder` is the one that actually returns a Paystack authorization_url.
     const order: Order = {
       id: `ord_${reference}`,
       reference,
-      status: draft.paymentMethod === 'pay_on_delivery' ? 'confirmed' : 'pending_payment',
+      status: 'confirmed',
       lines,
       totals: totalsFor(lines),
       address: draft.address,
@@ -152,26 +155,14 @@ const orders: OrderRepository = {
       estimatedTo: new Date(+now + 5 * 86400000).toISOString(),
       customerId: null,
     }
-    placed.set(reference, order)
-    try {
-      sessionStorage.setItem(`tancha.order.${reference}`, JSON.stringify(order))
-    } catch {
-      /* private mode — the in-memory map still serves this session */
-    }
-    return wait(order, 600)
+    orderStore.saveOrder(order)
+    return wait({ order }, 600)
   },
 
   async getOrder(reference) {
-    if (placed.has(reference)) return wait(placed.get(reference)!)
-    try {
-      const raw = sessionStorage.getItem(`tancha.order.${reference}`)
-      if (raw) return wait(JSON.parse(raw) as Order)
-    } catch {
-      /* ignore */
-    }
-    return wait(null)
+    return wait(orderStore.getOrder(reference))
   },
 }
 
-export const mockClient: DataClient = { catalog, deals: dealRepo, orders }
+export const mockClient: DataClient = { catalog, deals: dealRepo, orders, admin: mockAdmin }
 export { totalsFor }

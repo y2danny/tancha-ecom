@@ -1,11 +1,13 @@
 import { Zap } from 'lucide-react'
 import { db } from '@/data'
 import { useAsync } from '@/hooks/useAsync'
+import { useSeo } from '@/lib/seo'
 import { ProductGrid } from '@/components/product/ProductGrid'
 import { Countdown } from '@/components/ui/Countdown'
 import type { Product } from '@/types/catalog'
 
 export function DealsPage() {
+  useSeo({ title: "Today's Deals", description: 'Deal of the day, deal of the week, and bundle deals — all producer-direct, all time-boxed.' })
   const { data: deals, loading } = useAsync(() => db.deals.listActiveDeals(), [], [])
   const ids = deals.flatMap((d) => d.productIds)
   const { data: products } = useAsync(() => db.catalog.getProductsByIds(ids), [ids.join(',')], [])
