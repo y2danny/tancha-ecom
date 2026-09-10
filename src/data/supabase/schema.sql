@@ -28,8 +28,12 @@ create table profiles (
 
 create table role_audit (
   id          bigserial primary key,
-  actor_id    uuid references profiles(id),
-  subject_id  uuid references profiles(id),
+  -- "on delete set null" (not the default) so deleting a staff account is
+  -- never blocked by its own audit trail, and the trail survives the
+  -- deletion -- only the actor/subject link goes null, from_role/to_role/
+  -- created_at stay intact.
+  actor_id    uuid references profiles(id) on delete set null,
+  subject_id  uuid references profiles(id) on delete set null,
   from_role   app_role,
   to_role     app_role,
   created_at  timestamptz not null default now()

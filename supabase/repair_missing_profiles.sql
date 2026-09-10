@@ -50,6 +50,23 @@ grant usage, select on all sequences in schema public to anon, authenticated, se
 alter default privileges in schema public grant select, insert, update, delete on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant usage, select on sequences to anon, authenticated, service_role;
 
+-- ── role_audit foreign keys: "on delete set null" not the default ──────────
+-- Without this, deleting a user from auth.users cascades to their profiles
+-- row and then hits role_audit's default (blocking) FK behavior — the
+-- delete fails with a foreign-key violation instead of going through, and
+-- Supabase's dashboard surfaces that as a generic "failed to delete user"
+-- error. Switching to "set null" lets the delete succeed while keeping the
+-- audit row itself (from_role/to_role/created_at) — only the actor/subject
+-- link goes null.
+alter table role_audit drop constraint if exists role_audit_actor_id_fkey;
+alter table role_audit drop constraint if exists role_audit_subject_id_fkey;
+alter table role_audit
+  add constraint role_audit_actor_id_fkey
+  foreign key (actor_id) references profiles(id) on delete set null;
+alter table role_audit
+  add constraint role_audit_subject_id_fkey
+  foreign key (subject_id) references profiles(id) on delete set null;
+
 -- ── Helper function every policy below depends on ────────────────────────────
 create or replace function current_role_is(roles app_role[])
 returns boolean language sql stable security definer set search_path = public as $$
