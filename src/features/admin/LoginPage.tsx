@@ -52,7 +52,7 @@ export function LoginPage() {
           </label>
           <input
             id="email" type="email" required className={field} value={email}
-            onChange={(e) => setEmail(e.target.value)} placeholder="you@tancha.ng"
+            onChange={(e) => setEmail(e.target.value)} placeholder="you@tancha.com.ng"
           />
 
           <label className="mb-1.5 mt-3 block text-xs font-bold uppercase tracking-wide text-muted" htmlFor="password">

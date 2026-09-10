@@ -6,4 +6,4 @@ Disallow: /checkout
 Disallow: /order/
 Disallow: /account
 
-Sitemap: https://tancha.ng/sitemap.xml
+Sitemap: https://tancha.com.ng/sitemap.xml

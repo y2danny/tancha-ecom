@@ -4,6 +4,8 @@ import { ArrowRight, GraduationCap, PackageCheck, Sparkles } from 'lucide-react'
 import { db } from '@/data'
 import { useAsync } from '@/hooks/useAsync'
 import { categories } from '@/data/mock/categories'
+import { promoBanners } from '@/data/mock/promos'
+import { HeroCarousel, PromoBannerSlide, type CarouselSlide } from '@/components/home/HeroCarousel'
 import { ProductImage } from '@/components/product/ProductImage'
 import { ProductGrid, ProductRail } from '@/components/product/ProductGrid'
 import { DealStrip } from '@/components/product/DealStrip'
@@ -92,7 +94,7 @@ function Hero() {
   const dayDeal = deals.find((d) => d.kind === 'day')
 
   return (
-    <section className="overflow-hidden rounded-md bg-gradient-to-br from-navy-800 via-navy-700 to-navy-900 text-white shadow-card">
+    <section className="bg-gradient-to-br from-navy-800 via-navy-700 to-navy-900 text-white">
       <div className="grid items-center gap-6 p-6 sm:p-8 lg:grid-cols-[1.15fr_0.85fr] lg:p-10">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-400 px-3 py-1 text-xs font-bold uppercase tracking-wide text-navy-950">
@@ -299,10 +301,33 @@ function EverythingGrid() {
   )
 }
 
+/**
+ * Photo promo banners lead the carousel — they're the scroll-stopping
+ * "offer" graphics — with the evergreen brand hero (headline, CTAs, live
+ * deal countdown) as the last slide so it's always reachable even before
+ * more promos exist. Add a new banner in `src/data/mock/promos.ts` and it
+ * shows up here automatically.
+ */
+function buildHeroSlides(): CarouselSlide[] {
+  return [
+    ...promoBanners.map((banner) => ({
+      id: banner.id,
+      ariaLabel: banner.alt,
+      render: () => <PromoBannerSlide banner={banner} />,
+    })),
+    {
+      id: 'brand-hero',
+      ariaLabel: "Tancha — the whole school list, up to 62% off",
+      render: () => <Hero />,
+    },
+  ]
+}
+
 export function HomePage() {
+  const heroSlides = buildHeroSlides()
   return (
     <div className="mx-auto max-w-[1400px] space-y-4 px-3 py-4 sm:px-4">
-      <Hero />
+      <HeroCarousel slides={heroSlides} />
       <CategoryTiles />
       <DealSection />
       <BestSellers />

@@ -19,11 +19,34 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const admin = createClient(supabaseUrl, serviceKey)
 
-  const { data: caller } = await admin.auth.getUser(authHeader.replace('Bearer ', ''))
-  if (!caller.user) return json({ error: 'Not signed in' }, 401)
+  const { data: caller, error: callerError } = await admin.auth.getUser(authHeader.replace('Bearer ', ''))
+  if (!caller.user) {
+    console.log('DEBUG getUser failed', { callerError })
+    return json({ error: 'Not signed in', debug: { callerError } }, 401)
+  }
 
-  const { data: callerProfile } = await admin.from('profiles').select('role').eq('id', caller.user.id).single()
-  if (callerProfile?.role !== 'owner') return json({ error: 'Only the owner can invite team members' }, 403)
+  const { data: callerProfile, error: profileError } = await admin
+    .from('profiles')
+    .select('id, role, email')
+    .eq('id', caller.user.id)
+    .maybeSingle()
+
+  console.log('DEBUG owner check', {
+    callerId: caller.user.id,
+    callerEmail: caller.user.email,
+    callerProfile,
+    profileError,
+  })
+
+  if (callerProfile?.role !== 'owner') {
+    return json(
+      {
+        error: 'Only the owner can invite team members',
+        debug: { callerId: caller.user.id, callerEmail: caller.user.email, callerProfile, profileError },
+      },
+      403,
+    )
+  }
 
   let body: { email?: string; fullName?: string; role?: string }
   try {

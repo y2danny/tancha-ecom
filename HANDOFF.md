@@ -131,9 +131,9 @@ vercel --prod
 
 Point your domain at the Vercel project (**Settings → Domains**) once you've
 picked one — nothing in the app hard-codes a domain except the SEO tags in
-`index.html` and `public/sitemap.xml`/`robots.txt`, which reference
-`tancha.ng` as a placeholder. Update those three files once you know the real
-domain (a find-and-replace is enough).
+`index.html` and `public/sitemap.xml`/`robots.txt`. These now point at
+`tancha.com.ng` (bought from Whogohost) rather than `tancha.ng` — if that
+ever changes, it's the same three files, a find-and-replace is enough.
 
 ## 5. Go-live checklist
 
@@ -150,8 +150,10 @@ domain (a find-and-replace is enough).
 - [ ] Switched `PAYSTACK_SECRET_KEY` from `sk_test_...` to the live
       `sk_live_...` equivalent once Paystack has approved the business for
       live payouts (`supabase secrets set PAYSTACK_SECRET_KEY=sk_live_...`).
-- [ ] Updated `tancha.ng` references in `index.html`,
-      `public/sitemap.xml`, and `public/robots.txt` to the real domain.
+- [x] Domain purchased (`tancha.com.ng`, via Whogohost) and SEO tags in
+      `index.html`/`public/sitemap.xml`/`public/robots.txt` updated to match.
+      Still to do: point its DNS at the Vercel deployment once that exists
+      (Vercel's **Settings → Domains** shows the exact A/CNAME records).
 - [ ] Had a lawyer glance at `src/features/legal/content.ts` — it's a solid
       starting draft (written with NDPR in mind), not a substitute for legal
       review.
