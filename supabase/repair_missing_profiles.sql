@@ -171,6 +171,27 @@ drop policy if exists role_audit_owner_insert on role_audit;
 create policy role_audit_owner_insert on role_audit for insert
   with check (current_role_is(array['owner']::app_role[]));
 
+-- ── Storage: product-images bucket (public read, staff upload) ─────────────
+-- A project that started before this bucket existed won't have it — this is
+-- the piece that lets the admin console actually attach a real photo to a
+-- product instead of only the built-in illustration.
+insert into storage.buckets (id, name, public)
+values ('product-images', 'product-images', true)
+on conflict (id) do nothing;
+
+drop policy if exists product_images_public_read on storage.objects;
+create policy product_images_public_read on storage.objects for select
+  using (bucket_id = 'product-images');
+drop policy if exists product_images_staff_upload on storage.objects;
+create policy product_images_staff_upload on storage.objects for insert
+  with check (bucket_id = 'product-images' and current_role_is(array['owner','admin','catalog_manager']::app_role[]));
+drop policy if exists product_images_staff_update on storage.objects;
+create policy product_images_staff_update on storage.objects for update
+  using (bucket_id = 'product-images' and current_role_is(array['owner','admin','catalog_manager']::app_role[]));
+drop policy if exists product_images_staff_delete on storage.objects;
+create policy product_images_staff_delete on storage.objects for delete
+  using (bucket_id = 'product-images' and current_role_is(array['owner','admin','catalog_manager']::app_role[]));
+
 -- ── Triggers (drop-then-create) ──────────────────────────────────────────────
 create or replace function handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$

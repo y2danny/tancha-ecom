@@ -27,6 +27,9 @@ export interface NewProductInput {
   brand: string
   categoryId: string
   imageKey: ImageKey
+  /** Real product photo, uploaded to the `product-images` storage bucket.
+   *  Falls back to the ImageKey illustration when unset — see ProductImage. */
+  imageUrl?: string | null
   priceKobo: number
   compareAtKobo: number | null
   stock: number

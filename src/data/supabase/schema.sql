@@ -347,6 +347,26 @@ create policy role_audit_owner_insert on role_audit for insert
   with check (current_role_is(array['owner']::app_role[]));
 
 -- ============================================================================
+-- Storage — product photos
+-- ============================================================================
+-- One public bucket the admin console uploads product photos into. Public
+-- read (product photos need to load on the storefront for anyone, signed in
+-- or not); write restricted to staff who can also touch the catalog, same
+-- roles as products_staff_write above.
+insert into storage.buckets (id, name, public)
+values ('product-images', 'product-images', true)
+on conflict (id) do nothing;
+
+create policy product_images_public_read on storage.objects for select
+  using (bucket_id = 'product-images');
+create policy product_images_staff_upload on storage.objects for insert
+  with check (bucket_id = 'product-images' and current_role_is(array['owner','admin','catalog_manager']::app_role[]));
+create policy product_images_staff_update on storage.objects for update
+  using (bucket_id = 'product-images' and current_role_is(array['owner','admin','catalog_manager']::app_role[]));
+create policy product_images_staff_delete on storage.objects for delete
+  using (bucket_id = 'product-images' and current_role_is(array['owner','admin','catalog_manager']::app_role[]));
+
+-- ============================================================================
 -- Triggers
 -- ============================================================================
 

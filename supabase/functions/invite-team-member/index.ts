@@ -49,11 +49,16 @@ Deno.serve(async (req) => {
   // of that dashboard setting (still update the dashboard's Site URL too —
   // Supabase also checks the target against its Redirect URLs allowlist).
   const siteUrl = Deno.env.get('PUBLIC_SITE_URL') || 'https://tancha.com.ng'
+  const redirectTo = `${siteUrl}/admin/accept-invite`
+  console.log('DEBUG invite redirect', { siteUrl, redirectTo })
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName ?? '' },
-    redirectTo: `${siteUrl}/admin/accept-invite`,
+    redirectTo,
   })
-  if (inviteError || !invited.user) return json({ error: inviteError?.message ?? 'Could not invite user' }, 500)
+  if (inviteError || !invited.user) {
+    console.log('DEBUG invite failed', { inviteError })
+    return json({ error: inviteError?.message ?? 'Could not invite user', debug: { redirectTo, inviteError } }, 500)
+  }
 
   // handle_new_user always inserts 'customer' first — overwrite to the
   // intended role and log it, same as any other role change.
@@ -73,5 +78,10 @@ Deno.serve(async (req) => {
       role,
       created_at: invited.user.created_at,
     },
+    // Temporary — shows exactly what redirect URL this specific call sent to
+    // Supabase, straight from the "Send invite" response in DevTools →
+    // Network, no need to dig through an email or function logs. Remove once
+    // the invite-accept flow is confirmed working end to end.
+    debugRedirectTo: redirectTo,
   })
 })

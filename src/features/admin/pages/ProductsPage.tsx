@@ -5,6 +5,8 @@ import { useAsync } from '@/hooks/useAsync'
 import { formatNaira, naira, slugify } from '@/lib/format'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { ProductPhotoUploader } from '@/components/admin/ProductPhotoUploader'
+import { ProductImage } from '@/components/product/ProductImage'
 import type { Category, ImageKey, Product, ProductTag } from '@/types/catalog'
 import type { NewProductInput } from '@/types/admin'
 
@@ -20,7 +22,7 @@ const label = 'mb-1 block text-xs font-bold uppercase tracking-wide text-muted'
 function emptyDraft(categories: Category[]): NewProductInput {
   return {
     slug: '', name: '', hook: '', description: '', bullets: [], brand: 'Tancha',
-    categoryId: categories[0]?.id ?? '', imageKey: 'notebook', priceKobo: 0, compareAtKobo: null,
+    categoryId: categories[0]?.id ?? '', imageKey: 'notebook', imageUrl: null, priceKobo: 0, compareAtKobo: null,
     stock: 0, tags: [], deliveryDaysMin: 2, deliveryDaysMax: 5, payOnDelivery: true, active: true, variants: [],
   }
 }
@@ -33,6 +35,7 @@ function ProductDrawer({
       ? {
           slug: product.slug, name: product.name, hook: product.hook, description: product.description,
           bullets: product.bullets, brand: product.brand, categoryId: product.categoryId, imageKey: product.imageKey,
+          imageUrl: product.imageUrl ?? null,
           priceKobo: product.priceKobo, compareAtKobo: product.compareAtKobo, stock: product.stock,
           tags: product.tags, deliveryDaysMin: product.deliveryDaysMin, deliveryDaysMax: product.deliveryDaysMax,
           payOnDelivery: product.payOnDelivery, active: product.active,
@@ -71,6 +74,15 @@ function ProductDrawer({
 
         <div className="space-y-3">
           <div>
+            <label className={label}>Photo</label>
+            <ProductPhotoUploader
+              value={draft.imageUrl}
+              onChange={(imageUrl) => setDraft({ ...draft, imageUrl })}
+              imageKey={draft.imageKey}
+              alt={draft.name || 'Product photo'}
+            />
+          </div>
+          <div>
             <label className={label} htmlFor="name">Name</label>
             <input id="name" className={field} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
           </div>
@@ -93,7 +105,7 @@ function ProductDrawer({
               </select>
             </div>
             <div>
-              <label className={label} htmlFor="imageKey">Illustration</label>
+              <label className={label} htmlFor="imageKey">Fallback illustration</label>
               <select id="imageKey" className={field} value={draft.imageKey} onChange={(e) => setDraft({ ...draft, imageKey: e.target.value as ImageKey })}>
                 {IMAGE_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
               </select>
@@ -213,7 +225,14 @@ export function ProductsPage() {
             ) : (
               products.map((p) => (
                 <tr key={p.id}>
-                  <td className="max-w-xs truncate px-4 py-3 font-medium">{p.name}</td>
+                  <td className="max-w-xs px-4 py-3 font-medium">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md border border-hairline bg-canvas">
+                        <ProductImage imageKey={p.imageKey} imageUrl={p.imageUrl} alt="" />
+                      </div>
+                      <span className="truncate">{p.name}</span>
+                    </div>
+                  </td>
                   <td className="px-4 py-3 tabular">{formatNaira(p.priceKobo)}</td>
                   <td className="px-4 py-3 tabular">{p.stock}</td>
                   <td className="px-4 py-3">
