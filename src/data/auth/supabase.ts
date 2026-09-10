@@ -54,6 +54,11 @@ export const supabaseAuth: AuthClient = {
     await supabase.auth.signOut()
   },
 
+  async setPassword(password) {
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) throw new Error(error.message)
+  },
+
   onChange(cb) {
     let cancelled = false
     supabase.auth.getSession().then(async ({ data }) => {

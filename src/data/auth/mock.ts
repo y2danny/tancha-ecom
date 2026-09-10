@@ -76,6 +76,11 @@ export const mockAuth: AuthClient = {
     write(null)
   },
 
+  async setPassword() {
+    // No real credentials in demo mode — nothing to update.
+    await wait(undefined, 120)
+  },
+
   onChange(cb) {
     cb(read())
     listeners.add(cb)

@@ -40,12 +40,15 @@ alter table role_audit          enable row level security;
 
 -- ── Base table grants (a separate layer from RLS — Postgres checks these
 --    FIRST, and without them every request fails with "permission denied
---    for table X" no matter how correct the RLS policies are) ──────────────
-grant usage on schema public to anon, authenticated;
-grant select, insert, update, delete on all tables in schema public to anon, authenticated;
-grant usage, select on all sequences in schema public to anon, authenticated;
-alter default privileges in schema public grant select, insert, update, delete on tables to anon, authenticated;
-alter default privileges in schema public grant usage, select on sequences to anon, authenticated;
+--    for table X" no matter how correct the RLS policies are). service_role
+--    needs this too — it's what Edge Functions use with the service key to
+--    bypass RLS by design, and a hand-run schema.sql doesn't grant it
+--    anything automatically the way a dashboard-scaffolded project does ────
+grant usage on schema public to anon, authenticated, service_role;
+grant select, insert, update, delete on all tables in schema public to anon, authenticated, service_role;
+grant usage, select on all sequences in schema public to anon, authenticated, service_role;
+alter default privileges in schema public grant select, insert, update, delete on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant usage, select on sequences to anon, authenticated, service_role;
 
 -- ── Helper function every policy below depends on ────────────────────────────
 create or replace function current_role_is(roles app_role[])

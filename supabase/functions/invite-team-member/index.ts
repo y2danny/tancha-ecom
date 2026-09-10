@@ -19,34 +19,16 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const admin = createClient(supabaseUrl, serviceKey)
 
-  const { data: caller, error: callerError } = await admin.auth.getUser(authHeader.replace('Bearer ', ''))
-  if (!caller.user) {
-    console.log('DEBUG getUser failed', { callerError })
-    return json({ error: 'Not signed in', debug: { callerError } }, 401)
-  }
+  const { data: caller } = await admin.auth.getUser(authHeader.replace('Bearer ', ''))
+  if (!caller.user) return json({ error: 'Not signed in' }, 401)
 
-  const { data: callerProfile, error: profileError } = await admin
+  const { data: callerProfile } = await admin
     .from('profiles')
     .select('id, role, email')
     .eq('id', caller.user.id)
     .maybeSingle()
 
-  console.log('DEBUG owner check', {
-    callerId: caller.user.id,
-    callerEmail: caller.user.email,
-    callerProfile,
-    profileError,
-  })
-
-  if (callerProfile?.role !== 'owner') {
-    return json(
-      {
-        error: 'Only the owner can invite team members',
-        debug: { callerId: caller.user.id, callerEmail: caller.user.email, callerProfile, profileError },
-      },
-      403,
-    )
-  }
+  if (callerProfile?.role !== 'owner') return json({ error: 'Only the owner can invite team members' }, 403)
 
   let body: { email?: string; fullName?: string; role?: string }
   try {
@@ -60,8 +42,16 @@ Deno.serve(async (req) => {
     return json({ error: 'Invalid role' }, 400)
   }
 
+  // Without an explicit redirectTo, Supabase sends the invite link back to
+  // whatever "Site URL" is set in Authentication → URL Configuration — which
+  // defaults to http://localhost:3000 and stays that way until someone
+  // changes it by hand. Pinning it here means the link is right regardless
+  // of that dashboard setting (still update the dashboard's Site URL too —
+  // Supabase also checks the target against its Redirect URLs allowlist).
+  const siteUrl = Deno.env.get('PUBLIC_SITE_URL') || 'https://tancha.com.ng'
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName ?? '' },
+    redirectTo: `${siteUrl}/admin/accept-invite`,
   })
   if (inviteError || !invited.user) return json({ error: inviteError?.message ?? 'Could not invite user' }, 500)
 

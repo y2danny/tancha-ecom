@@ -8,6 +8,7 @@ interface AuthState {
   loading: boolean
   signIn: (email: string, password: string) => Promise<AppUser>
   signOut: () => Promise<void>
+  setPassword: (password: string) => Promise<void>
   can: (permission: Permission) => boolean
 }
 
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       signIn: (email, password) => auth.signIn(email, password),
       signOut: () => auth.signOut(),
+      setPassword: (password) => auth.setPassword(password),
       can: (permission) => can(user, permission),
     }),
     [user, loading],

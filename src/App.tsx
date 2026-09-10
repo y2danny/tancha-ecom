@@ -21,6 +21,9 @@ import { NotFoundPage } from '@/features/home/NotFoundPage'
 // otherwise ships to every shopper for nothing.
 const AdminLayout = lazy(() => import('@/features/admin/AdminLayout').then((m) => ({ default: m.AdminLayout })))
 const LoginPage = lazy(() => import('@/features/admin/LoginPage').then((m) => ({ default: m.LoginPage })))
+const AcceptInvitePage = lazy(() =>
+  import('@/features/admin/AcceptInvitePage').then((m) => ({ default: m.AcceptInvitePage })),
+)
 const DashboardPage = lazy(() => import('@/features/admin/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })))
 const ProductsPage = lazy(() => import('@/features/admin/pages/ProductsPage').then((m) => ({ default: m.ProductsPage })))
 const InventoryPage = lazy(() => import('@/features/admin/pages/InventoryPage').then((m) => ({ default: m.InventoryPage })))
@@ -80,6 +83,7 @@ export default function App() {
               </Route>
 
               <Route path="/admin/login" element={<LoginPage />} />
+              <Route path="/admin/accept-invite" element={<AcceptInvitePage />} />
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<DashboardPage />} />
                 <Route path="products" element={<ProductsPage />} />

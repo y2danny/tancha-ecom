@@ -250,12 +250,19 @@ alter table role_audit          enable row level security;
 -- security boundary stays the policies below: a broad GRANT here, combined
 -- with restrictive RLS, is the standard, documented Supabase pattern (it's
 -- exactly what Postgres's own error message recommends doing).
-grant usage on schema public to anon, authenticated;
-grant select, insert, update, delete on all tables in schema public to anon, authenticated;
-grant usage, select on all sequences in schema public to anon, authenticated;
+--
+-- service_role is included here too. In a fresh Supabase project scaffolded
+-- through the dashboard, service_role gets full schema access automatically;
+-- this project's schema was applied by hand-running this file, which never
+-- granted service_role anything, so Edge Functions using the service key
+-- (which bypass RLS by design, e.g. invite-team-member) got the same
+-- "permission denied for table X" until this grant existed.
+grant usage on schema public to anon, authenticated, service_role;
+grant select, insert, update, delete on all tables in schema public to anon, authenticated, service_role;
+grant usage, select on all sequences in schema public to anon, authenticated, service_role;
 -- So any table added later doesn't silently reintroduce this bug.
-alter default privileges in schema public grant select, insert, update, delete on tables to anon, authenticated;
-alter default privileges in schema public grant usage, select on sequences to anon, authenticated;
+alter default privileges in schema public grant select, insert, update, delete on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant usage, select on sequences to anon, authenticated, service_role;
 
 -- Profiles: you see yourself; staff see everyone; only owner changes roles.
 create policy profiles_self_read on profiles for select
