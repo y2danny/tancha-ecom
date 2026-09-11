@@ -6,7 +6,7 @@ import { categories } from '@/data/mock/categories'
 
 const PROMISES = [
   { icon: Truck, title: 'Nationwide delivery', body: '2–5 working days to all 36 states' },
-  { icon: Wallet, title: 'Pay on delivery', body: 'Lagos, Abuja & Port Harcourt' },
+  { icon: Wallet, title: 'Pay on delivery', body: 'Lagos and Enugu' },
   { icon: Undo2, title: '7-day returns', body: 'Wrong size or damaged? Send it back' },
   { icon: ShieldCheck, title: 'Producer direct', body: 'No middleman, no market markup' },
 ]
