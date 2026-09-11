@@ -38,7 +38,7 @@ function DeliveryPanel({ product }: { product: Product }) {
           <div className="text-sm">
             <p className="font-bold">Pay on delivery available</p>
             <p className="mt-0.5 text-muted">
-              Lagos, Abuja and Port Harcourt. Check the item before you hand over cash.
+              Lagos and Enugu. Hold the item before you hand over cash.
             </p>
           </div>
         </div>

@@ -24,6 +24,6 @@ export const site = {
 export const announcements = [
   'Back-to-school season is live — up to 62% off essentials',
   'Free delivery on orders over ₦30,000 nationwide',
-  'Pay on delivery available in Lagos, Abuja & Port Harcourt',
+  'Pay on delivery available in Lagos and Enugu',
   'Direct from the producer. No middleman markup.',
 ]
