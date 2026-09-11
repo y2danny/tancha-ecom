@@ -44,6 +44,7 @@ export function mapProduct(row: any): Product {
     categoryId: row.category_id,
     imageKey: row.image_key as ImageKey,
     imageUrl: row.image_url,
+    gallery: row.gallery ?? [],
     priceKobo: row.price_kobo,
     compareAtKobo: row.compare_at_kobo,
     stock: row.stock,

@@ -59,6 +59,8 @@ export interface Product {
   imageKey: ImageKey
   /** Real photography drops in here later — SVG illustration is the fallback */
   imageUrl?: string | null
+  /** Extra photos shown as thumbnails on the product page, beyond `imageUrl`. */
+  gallery: string[]
   priceKobo: number
   compareAtKobo: number | null
   stock: number

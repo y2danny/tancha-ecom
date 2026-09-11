@@ -58,6 +58,7 @@ function make(seed: Seed): Product {
     categoryId: seed.categoryId,
     imageKey: seed.imageKey,
     imageUrl: null,
+    gallery: [],
     priceKobo,
     compareAtKobo: seed.was ? naira(seed.was) : null,
     stock: seed.stock ?? 40,

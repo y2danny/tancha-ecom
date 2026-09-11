@@ -6,6 +6,7 @@ import { formatNaira, naira, slugify } from '@/lib/format'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { ProductPhotoUploader } from '@/components/admin/ProductPhotoUploader'
+import { ProductGalleryUploader } from '@/components/admin/ProductGalleryUploader'
 import { ProductImage } from '@/components/product/ProductImage'
 import type { Category, ImageKey, Product, ProductTag } from '@/types/catalog'
 import type { NewProductInput } from '@/types/admin'
@@ -22,7 +23,7 @@ const label = 'mb-1 block text-xs font-bold uppercase tracking-wide text-muted'
 function emptyDraft(categories: Category[]): NewProductInput {
   return {
     slug: '', name: '', hook: '', description: '', bullets: [], brand: 'Tancha',
-    categoryId: categories[0]?.id ?? '', imageKey: 'notebook', imageUrl: null, priceKobo: 0, compareAtKobo: null,
+    categoryId: categories[0]?.id ?? '', imageKey: 'notebook', imageUrl: null, gallery: [], priceKobo: 0, compareAtKobo: null,
     stock: 0, tags: [], deliveryDaysMin: 2, deliveryDaysMax: 5, payOnDelivery: true, active: true, variants: [],
   }
 }
@@ -36,6 +37,7 @@ function ProductDrawer({
           slug: product.slug, name: product.name, hook: product.hook, description: product.description,
           bullets: product.bullets, brand: product.brand, categoryId: product.categoryId, imageKey: product.imageKey,
           imageUrl: product.imageUrl ?? null,
+          gallery: product.gallery ?? [],
           priceKobo: product.priceKobo, compareAtKobo: product.compareAtKobo, stock: product.stock,
           tags: product.tags, deliveryDaysMin: product.deliveryDaysMin, deliveryDaysMax: product.deliveryDaysMax,
           payOnDelivery: product.payOnDelivery, active: product.active,
@@ -80,6 +82,13 @@ function ProductDrawer({
               onChange={(imageUrl) => setDraft({ ...draft, imageUrl })}
               imageKey={draft.imageKey}
               alt={draft.name || 'Product photo'}
+            />
+          </div>
+          <div>
+            <label className={label}>More photos (optional)</label>
+            <ProductGalleryUploader
+              value={draft.gallery}
+              onChange={(gallery) => setDraft({ ...draft, gallery })}
             />
           </div>
           <div>

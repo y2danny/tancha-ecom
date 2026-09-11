@@ -1,18 +1,9 @@
 import { useRef, useState } from 'react'
 import { ImageOff, Loader2, Upload } from 'lucide-react'
-import { supabase, supabaseReady } from '@/data/supabase/client'
+import { uploadProductImage } from '@/lib/productImages'
 import { ProductImage } from '@/components/product/ProductImage'
 import type { ImageKey } from '@/types/catalog'
 import { Button } from '@/components/ui/Button'
-
-const MAX_BYTES = 5 * 1024 * 1024
-const BUCKET = 'product-images'
-
-function randomPath(file: File) {
-  const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : ''
-  const id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`
-  return `${id}${ext}`
-}
 
 /**
  * The product photo an admin actually cares about — separate from `imageKey`,
@@ -20,7 +11,8 @@ function randomPath(file: File) {
  * photo yet (see ProductImage). Uploads straight to the `product-images`
  * storage bucket and hands back its public URL; the illustration is still
  * shown as a live preview of the fallback so it's clear what a product looks
- * like on the storefront before a photo is added.
+ * like on the storefront before a photo is added. For more than one photo,
+ * see ProductGalleryUploader below this one in the form.
  */
 export function ProductPhotoUploader({
   value,
@@ -42,25 +34,9 @@ export function ProductPhotoUploader({
   const handleFile = async (file: File | undefined) => {
     if (!file) return
     setError(null)
-    if (!file.type.startsWith('image/')) {
-      setError('Choose an image file (JPG, PNG, WebP).')
-      return
-    }
-    if (file.size > MAX_BYTES) {
-      setError('That photo is over 5MB — resize it and try again.')
-      return
-    }
-    if (!supabaseReady) {
-      setError('Photo upload needs Supabase connected. In demo mode only the illustration shows.')
-      return
-    }
     setUploading(true)
     try {
-      const path = randomPath(file)
-      const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
-      if (uploadError) throw uploadError
-      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
-      onChange(data.publicUrl)
+      onChange(await uploadProductImage(file))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not upload that photo')
     } finally {
@@ -88,7 +64,7 @@ export function ProductPhotoUploader({
             )}
           </div>
           <p className="mt-1.5 text-xs text-muted">
-            {value ? 'Shown on the storefront instead of the illustration.' : 'No photo yet — the illustration below shows in its place.'}
+            {value ? 'The main photo — shown first on the storefront.' : 'No photo yet — the illustration shows in its place.'}
           </p>
         </div>
       </div>

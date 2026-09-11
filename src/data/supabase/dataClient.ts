@@ -178,6 +178,7 @@ function productPatchToRow(patch: Partial<NewProductInput>) {
   if (patch.categoryId !== undefined) row.category_id = patch.categoryId
   if (patch.imageKey !== undefined) row.image_key = patch.imageKey
   if (patch.imageUrl !== undefined) row.image_url = patch.imageUrl
+  if (patch.gallery !== undefined) row.gallery = patch.gallery
   if (patch.priceKobo !== undefined) row.price_kobo = patch.priceKobo
   if (patch.compareAtKobo !== undefined) row.compare_at_kobo = patch.compareAtKobo
   if (patch.stock !== undefined) row.stock = patch.stock

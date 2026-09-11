@@ -30,6 +30,8 @@ export interface NewProductInput {
   /** Real product photo, uploaded to the `product-images` storage bucket.
    *  Falls back to the ImageKey illustration when unset — see ProductImage. */
   imageUrl?: string | null
+  /** Extra photos, same bucket — thumbnails on the product page. */
+  gallery: string[]
   priceKobo: number
   compareAtKobo: number | null
   stock: number

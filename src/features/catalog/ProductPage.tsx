@@ -70,6 +70,9 @@ export function ProductPage() {
   const [quantity, setQuantity] = useState(1)
   const [variant, setVariant] = useState<ProductVariant | null>(null)
   const [added, setAdded] = useState(false)
+  // null = "showing the main photo" — avoids needing the product loaded yet
+  // to pick a starting value, and resets cleanly on navigation below.
+  const [activeImage, setActiveImage] = useState<string | null>(null)
 
   const { data: product, loading } = useAsync(
     () => db.catalog.getProduct(slug ?? ''),
@@ -95,6 +98,7 @@ export function ProductPage() {
     setVariant(null)
     setQuantity(1)
     setAdded(false)
+    setActiveImage(null)
     window.scrollTo({ top: 0 })
   }, [slug])
 
@@ -127,6 +131,8 @@ export function ProductPage() {
   }
 
   const category = categoryById.get(product.categoryId)
+  const images = [product.imageUrl, ...product.gallery].filter((u): u is string => Boolean(u))
+  const mainImage = activeImage ?? images[0]
   const activePrice = variant?.priceKobo ?? product.priceKobo
   const activeStock = variant?.stock ?? product.stock
   const needsVariant = product.variants.length > 0 && !variant
@@ -155,19 +161,29 @@ export function ProductPage() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_300px]">
         <div className="overflow-hidden rounded-md bg-white p-4 shadow-card">
           <span className="block aspect-square overflow-hidden rounded">
-            <ProductImage imageKey={product.imageKey} imageUrl={product.imageUrl} alt={product.name} />
+            {mainImage ? (
+              <img src={mainImage} alt={product.name} className="h-full w-full object-cover" />
+            ) : (
+              <ProductImage imageKey={product.imageKey} alt={product.name} />
+            )}
           </span>
-          <div className="mt-3 grid grid-cols-4 gap-2">
-            {[0, 1, 2, 3].map((i) => (
-              <span
-                key={i}
-                className="block aspect-square overflow-hidden rounded ring-1 ring-hairline"
-                style={{ opacity: i === 0 ? 1 : 0.5 }}
-              >
-                <ProductImage imageKey={product.imageKey} alt="" />
-              </span>
-            ))}
-          </div>
+          {images.length > 1 && (
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              {images.map((src, i) => (
+                <button
+                  key={src}
+                  type="button"
+                  onClick={() => setActiveImage(src)}
+                  aria-label={`Show photo ${i + 1}`}
+                  aria-current={src === mainImage}
+                  className="block aspect-square overflow-hidden rounded ring-1 ring-hairline"
+                  style={{ opacity: src === mainImage ? 1 : 0.55 }}
+                >
+                  <img src={src} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">
