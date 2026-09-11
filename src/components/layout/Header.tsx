@@ -86,7 +86,7 @@ function SearchBox({ className }: { className?: string }) {
           }}
           onFocus={() => setOpen(true)}
           placeholder="Search backpacks, calculators, uniforms…"
-          className="min-w-0 flex-1 px-3.5 text-sm outline-none placeholder:text-muted"
+          className="min-w-0 flex-1 px-3.5 text-sm text-ink outline-none placeholder:text-muted"
           aria-label="Search products"
         />
         <button
