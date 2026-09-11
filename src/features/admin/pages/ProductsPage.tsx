@@ -223,7 +223,7 @@ export function ProductsPage() {
               <th className="px-4 py-3">Price</th>
               <th className="px-4 py-3">Stock</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3" />
+              <th className="sticky right-0 border-l border-hairline bg-white px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-hairline">
@@ -254,7 +254,7 @@ export function ProductsPage() {
                       <Badge tone={p.active ? 'green' : 'muted'}>{p.active ? 'Active' : 'Hidden'}</Badge>
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="sticky right-0 border-l border-hairline bg-white px-4 py-3 text-right">
                     <button onClick={() => setDrawer(p)} className="text-navy-600 hover:underline" aria-label={`Edit ${p.name}`}>
                       <Pencil size={15} />
                     </button>
