@@ -115,6 +115,22 @@ export const mockAdmin: AdminRepository = {
     await wait(undefined, 120)
   },
 
+  async deleteProduct(id) {
+    const product = productById.get(id)
+    if (!product) return
+    // Mirrors the real "on delete restrict" on order_items.product_id —
+    // a product that's ever been ordered keeps its history intact.
+    const everOrdered = orderStore.listOrders().some((o) => o.lines.some((l) => l.productId === id))
+    if (everOrdered) {
+      throw new Error('This product has order history and can’t be deleted — use Hide instead.')
+    }
+    const index = products.findIndex((p) => p.id === id)
+    if (index !== -1) products.splice(index, 1)
+    productById.delete(id)
+    productBySlug.delete(product.slug)
+    await wait(undefined, 150)
+  },
+
   async adjustInventory(input: InventoryAdjustment) {
     const product = productById.get(input.productId)
     if (!product) throw new Error('Product not found')

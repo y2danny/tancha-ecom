@@ -238,6 +238,19 @@ const admin: AdminRepository = {
     if (error) throw error
   },
 
+  async deleteProduct(id) {
+    const { error } = await supabase.from('products').delete().eq('id', id)
+    if (error) {
+      // order_items.product_id is "on delete restrict" on purpose — a
+      // product that's ever been ordered must stay around for order
+      // history. Postgres reports that as a foreign_key_violation (23503).
+      if (error.code === '23503') {
+        throw new Error('This product has order history and can’t be deleted — use Hide instead.')
+      }
+      throw error
+    }
+  },
+
   async adjustInventory(input: InventoryAdjustment) {
     // Stock itself is never written directly — the trigger on this table
     // applies the delta, which is the whole point of an append-only ledger.

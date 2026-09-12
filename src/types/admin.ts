@@ -83,6 +83,9 @@ export interface AdminRepository {
   createProduct(input: NewProductInput): Promise<import('./catalog').Product>
   updateProduct(id: string, patch: Partial<NewProductInput>): Promise<import('./catalog').Product>
   setProductActive(id: string, active: boolean): Promise<void>
+  /** Hard delete. Rejects if the product has ever been ordered — order
+   *  history must stay intact, so hide it with setProductActive instead. */
+  deleteProduct(id: string): Promise<void>
 
   // Inventory
   adjustInventory(input: InventoryAdjustment): Promise<void>

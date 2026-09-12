@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Pencil, Plus, X } from 'lucide-react'
+import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { db } from '@/data'
 import { useAsync } from '@/hooks/useAsync'
 import { formatNaira, naira, slugify } from '@/lib/format'
@@ -191,11 +191,51 @@ function ProductDrawer({
   )
 }
 
+function DeleteProductDialog({
+  product, onClose, onDeleted,
+}: { product: Product; onClose: () => void; onDeleted: () => void }) {
+  const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const confirm = async () => {
+    setDeleting(true)
+    setError(null)
+    try {
+      await db.admin.deleteProduct(product.id)
+      onDeleted()
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not delete this product')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 px-4">
+      <div className="w-full max-w-sm rounded-md bg-white p-5 shadow-panel">
+        <h2 className="text-lg font-bold">Delete product?</h2>
+        <p className="mt-1.5 text-sm text-muted">
+          <span className="font-semibold text-ink">{product.name}</span> will be permanently removed. This can&apos;t be undone.
+        </p>
+        {error && <p role="alert" className="mt-3 rounded-md bg-flash/10 px-3 py-2 text-xs font-semibold text-flash-dark">{error}</p>}
+        <div className="mt-4 flex gap-2">
+          <Button variant="primary" className="flex-1 !bg-flash hover:!bg-flash-dark" onClick={confirm} disabled={deleting}>
+            {deleting ? 'Deleting…' : 'Delete'}
+          </Button>
+          <Button variant="outline" onClick={onClose} disabled={deleting}>Cancel</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function ProductsPage() {
   const { data: categories } = useAsync(() => db.catalog.listCategories(), [], [] as Category[])
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [drawer, setDrawer] = useState<'closed' | 'new' | Product>('closed')
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
 
   const reload = () => {
     setLoading(true)
@@ -255,9 +295,14 @@ export function ProductsPage() {
                     </button>
                   </td>
                   <td className="sticky right-0 border-l border-hairline bg-white px-4 py-3 text-right">
-                    <button onClick={() => setDrawer(p)} className="text-navy-600 hover:underline" aria-label={`Edit ${p.name}`}>
-                      <Pencil size={15} />
-                    </button>
+                    <div className="flex items-center justify-end gap-3">
+                      <button onClick={() => setDrawer(p)} className="text-navy-600 hover:underline" aria-label={`Edit ${p.name}`}>
+                        <Pencil size={15} />
+                      </button>
+                      <button onClick={() => setDeleteTarget(p)} className="text-flash-dark hover:underline" aria-label={`Delete ${p.name}`}>
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -272,6 +317,14 @@ export function ProductsPage() {
           product={drawer === 'new' ? null : drawer}
           onClose={() => setDrawer('closed')}
           onSaved={reload}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteProductDialog
+          product={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={reload}
         />
       )}
     </div>
