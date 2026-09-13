@@ -1,0 +1,88 @@
+b570dcd58fe29a031bcb9525f2e3f2e4031dd092
+Track supabase/.gitignore added by 'supabase init'
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Rx7FVG5L6XTjAtBPRbff5W
+
+====
+31fdac9fe362259fb0aaf0b5e35ae30d8b2ab398
+Set verify_jwt=false for paystack-webhook (server-to-server, no Supabase session)
+
+Deploying it with the default JWT-required setting meant Supabase's own
+gateway rejected every call with 401 before the function's own
+x-paystack-signature check ever ran - confirmed live: Paystack's
+webhook caller never carries a Supabase session, so this must stay
+off for this one function specifically (every other function keeps
+requiring a JWT, since the app calls those with the user's session or
+the anon key).
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Rx7FVG5L6XTjAtBPRbff5W
+
+====
+b5fa870a2825cff6ccdba4115a48e85a8d09b2ba
+HANDOFF.md: add missing 'supabase init' step before functions deploy
+
+Discovered live: functions deploy needs supabase/config.toml, which
+only 'supabase init' creates - the functions/ folder alone isn't
+enough for the CLI to recognize the project.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Rx7FVG5L6XTjAtBPRbff5W
+
+====
+49b9ee8c53421ea777f0dca8b294dc68e4150d38
+Fix missing table grants for anon/authenticated (RLS != permissions)
+
+schema.sql enabled RLS and wrote all 27 policies but never granted the
+base table privileges those policies sit on top of - Postgres checks
+plain GRANTs before RLS is even evaluated, so every request was
+failing with 'permission denied for table X' regardless of how
+correct the policies were. Adds the standard Supabase pattern (broad
+GRANT to anon/authenticated + ALTER DEFAULT PRIVILEGES for future
+tables, with RLS remaining the actual row-level boundary) to both
+schema.sql and the repair script.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Rx7FVG5L6XTjAtBPRbff5W
+
+====
+badb7e431e4ac35f1942287d7f8295f6a7b1aa19
+Add repair script for missing RLS/policies/trigger after a partial schema run
+
+Covers the case where schema.sql errors out partway through its first
+run and never reaches the RLS/policy/trigger sections at the bottom -
+symptom is the app saying 'Signed in, but your profile row was not
+found.' Safe to re-run any number of times.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Rx7FVG5L6XTjAtBPRbff5W
+
+====
+4db984884f90ec67a74c6425fef5a09741b0a5fd
+Add Supabase backend, admin console, legal/SEO/a11y pass, and CI
+
+- Postgres schema with RLS for every role (owner/admin/catalog_manager/
+  support_agent/customer), plus a generated demo-catalog seed.
+- Four Edge Functions: checkout (server-side re-pricing, the client never
+  sends a total), paystack-webhook (HMAC-verified payment confirmation,
+  never trusts the browser redirect), order-lookup (guest orders), and
+  invite-team-member (owner-only staff invites).
+- Supabase DataClient + AuthClient implementations behind the existing
+  seam (src/data, src/store/auth) - mock mode still works with zero
+  config, live mode switches on automatically once env vars are set.
+- Full admin console at /admin: dashboard, products, inventory (with an
+  audit trail), deals, orders, team - role-gated, code-split from the
+  storefront bundle.
+- Checkout/order-confirmation wired to the real backend, including
+  Paystack redirect handling and payment-status polling.
+- Legal pages (privacy/terms/returns), per-route SEO (meta tags,
+  JSON-LD, robots.txt, sitemap.xml), a WCAG AA contrast fix, and a real
+  404 page.
+- GitHub Actions CI (lint + typecheck + build) and HANDOFF.md with the
+  full go-live runbook.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Rx7FVG5L6XTjAtBPRbff5W
+
+====

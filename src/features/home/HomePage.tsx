@@ -18,6 +18,13 @@ import type { ImageKey, Product } from '@/types/catalog'
  * Each hero tile cycles through three products on its own offset timer, so the
  * block reads as a moving shelf rather than four static thumbnails. Stops
  * entirely for anyone who has asked the OS to reduce motion.
+ *
+ * These four groups are just the *theme* per tile (bags & footwear, tech,
+ * apparel, everyday essentials) — pickHeroImages() below swaps each key for
+ * a real product photo the admin has uploaded, and only falls back to the
+ * illustration when nothing's been photographed for that slot yet. Nothing
+ * here needs editing as more products get real photos — it picks them up
+ * automatically.
  */
 const HERO_TILES: ImageKey[][] = [
   ['backpack', 'sportsbag', 'shoes'],
@@ -26,14 +33,40 @@ const HERO_TILES: ImageKey[][] = [
   ['lunchbox', 'bottle', 'notebook'],
 ]
 
+type HeroTileItem = { imageKey: ImageKey; imageUrl: string | null; alt: string }
+
+function pickHeroImages(products: Product[]): HeroTileItem[][] {
+  const byKey = new Map<ImageKey, Product[]>()
+  for (const p of products) {
+    const list = byKey.get(p.imageKey)
+    if (list) list.push(p)
+    else byKey.set(p.imageKey, [p])
+  }
+  // Real photos first within each key, so a photographed product always wins
+  // over an illustration-only one sharing the same key.
+  for (const list of byKey.values()) {
+    list.sort((a, b) => Number(Boolean(b.imageUrl)) - Number(Boolean(a.imageUrl)))
+  }
+
+  const used = new Set<string>()
+  return HERO_TILES.map((keys) =>
+    keys.map((key): HeroTileItem => {
+      const candidates = byKey.get(key) ?? []
+      const pick = candidates.find((p) => !used.has(p.id)) ?? candidates[0]
+      if (pick) used.add(pick.id)
+      return { imageKey: key, imageUrl: pick?.imageUrl ?? null, alt: pick?.name ?? '' }
+    }),
+  )
+}
+
 const TILE_INTERVAL_MS = 3200
 
 function HeroTile({
-  keys,
+  items,
   offsetMs,
   lifted,
 }: {
-  keys: ImageKey[]
+  items: HeroTileItem[]
   offsetMs: number
   lifted: boolean
 }) {
@@ -43,9 +76,9 @@ function HeroTile({
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     let interval: number | undefined
     const start = window.setTimeout(() => {
-      setIndex((i) => (i + 1) % keys.length)
+      setIndex((i) => (i + 1) % items.length)
       interval = window.setInterval(
-        () => setIndex((i) => (i + 1) % keys.length),
+        () => setIndex((i) => (i + 1) % items.length),
         TILE_INTERVAL_MS,
       )
     }, offsetMs + TILE_INTERVAL_MS)
@@ -53,7 +86,7 @@ function HeroTile({
       window.clearTimeout(start)
       if (interval) window.clearInterval(interval)
     }
-  }, [keys.length, offsetMs])
+  }, [items.length, offsetMs])
 
   return (
     <div
@@ -61,9 +94,9 @@ function HeroTile({
       style={{ transform: lifted ? 'translateY(14px)' : undefined }}
     >
       <span className="block aspect-square">
-        {keys.map((key, i) => (
+        {items.map((item, i) => (
           <span
-            key={key}
+            key={`${item.imageKey}-${i}`}
             aria-hidden={i !== index}
             className="absolute inset-0 transition-all duration-700 ease-out"
             style={{
@@ -71,15 +104,15 @@ function HeroTile({
               transform: i === index ? 'scale(1)' : 'scale(1.06)',
             }}
           >
-            <ProductImage imageKey={key} alt="" />
+            <ProductImage imageKey={item.imageKey} imageUrl={item.imageUrl} alt={item.alt} />
           </span>
         ))}
       </span>
 
       <span className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
-        {keys.map((key, i) => (
+        {items.map((item, i) => (
           <span
-            key={key}
+            key={`${item.imageKey}-${i}`}
             className="h-1 rounded-full bg-navy-900 transition-all duration-500"
             style={{ width: i === index ? 14 : 5, opacity: i === index ? 0.55 : 0.18 }}
           />
@@ -92,6 +125,13 @@ function HeroTile({
 function Hero() {
   const { data: deals } = useAsync(() => db.deals.listActiveDeals(), [], [])
   const dayDeal = deals.find((d) => d.kind === 'day')
+
+  const { data: heroProducts } = useAsync(
+    () => db.catalog.listProducts({ perPage: 100 }),
+    [],
+    { items: [], total: 0, page: 1, perPage: 100, pageCount: 1 },
+  )
+  const heroTiles = pickHeroImages(heroProducts.items)
 
   return (
     <section className="bg-gradient-to-br from-navy-800 via-navy-700 to-navy-900 text-white">
@@ -139,8 +179,8 @@ function Hero() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {HERO_TILES.map((keys, i) => (
-            <HeroTile key={i} keys={keys} offsetMs={i * 900} lifted={i % 2 === 1} />
+          {heroTiles.map((items, i) => (
+            <HeroTile key={i} items={items} offsetMs={i * 900} lifted={i % 2 === 1} />
           ))}
         </div>
       </div>
