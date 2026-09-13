@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Menu, Phone, Search, ShoppingCart, User, X } from 'lucide-react'
+import { Menu, Phone, Search, ShoppingCart, Sparkles, User, X } from 'lucide-react'
 import { Logo } from '@/components/brand/Logo'
 import { ProductImage } from '@/components/product/ProductImage'
 import { useCart } from '@/store/cart'
@@ -18,16 +18,20 @@ function AnnouncementBar() {
     return () => window.clearInterval(id)
   }, [])
   return (
-    <div className="bg-navy-950 text-white">
+    <div className="animate-shimmer-bar text-white">
       <div className="mx-auto flex h-9 max-w-[1400px] items-center justify-between gap-4 px-4 text-xs">
-        <p key={index} className="animate-rise truncate font-medium">
-          {announcements[index]}
+        <p key={index} className="animate-rise flex min-w-0 items-center gap-1.5 truncate font-medium">
+          <Sparkles size={13} className="animate-bob shrink-0 text-gold-300" aria-hidden />
+          <span className="truncate">{announcements[index]}</span>
         </p>
         <a
           href={`tel:${site.supportPhone.replace(/\s/g, '')}`}
-          className="hidden shrink-0 items-center gap-1.5 font-semibold text-navy-100 hover:text-white sm:flex"
+          className="hidden shrink-0 items-center gap-2 font-semibold text-navy-100 hover:text-white sm:flex"
         >
-          <Phone size={13} />
+          <span className="relative grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gold-400/90">
+            <span className="animate-pulse-ring absolute inset-0 rounded-full" aria-hidden />
+            <Phone size={12} className="animate-ring text-navy-950" aria-hidden />
+          </span>
           {site.supportPhone}
         </a>
       </div>
