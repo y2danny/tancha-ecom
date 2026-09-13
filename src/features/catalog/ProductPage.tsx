@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { SectionHeader } from '@/components/ui/SectionHeader'
-import { formatCompact, formatDate, formatNaira, toWhatsAppNumber } from '@/lib/format'
+import { formatCompact, formatDate, formatDayRange, formatNaira, toWhatsAppNumber } from '@/lib/format'
 import { site } from '@/config/site'
 import { categoryById } from '@/data/mock/categories'
 import type { Product, ProductVariant } from '@/types/catalog'
@@ -26,7 +26,7 @@ function DeliveryPanel({ product }: { product: Product }) {
       <div className="flex gap-3 p-4">
         <Truck className="mt-0.5 shrink-0 text-navy-600" size={19} />
         <div className="text-sm">
-          <p className="font-bold">Delivery in {product.deliveryDaysMin}–{product.deliveryDaysMax} working days</p>
+          <p className="font-bold">Delivery in {formatDayRange(product.deliveryDaysMin, product.deliveryDaysMax)} working days</p>
           <p className="mt-0.5 text-muted">
             Free over {formatNaira(site.freeDeliveryThresholdKobo)}. Otherwise {formatNaira(150_000)} flat, nationwide.
           </p>
@@ -38,7 +38,7 @@ function DeliveryPanel({ product }: { product: Product }) {
           <div className="text-sm">
             <p className="font-bold">Pay on delivery available</p>
             <p className="mt-0.5 text-muted">
-              Lagos and Enugu. Hold the item before you hand over cash.
+              Lagos, Abuja and Port Harcourt. Check the item before you hand over cash.
             </p>
           </div>
         </div>

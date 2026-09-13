@@ -148,7 +148,7 @@ function Hero() {
       <div className="grid grid-cols-2 gap-px bg-white/10 sm:grid-cols-4">
         {[
           ['62%', 'off school essentials'],
-          ['2–5 days', 'nationwide delivery'],
+          ['14 days', 'nationwide delivery'],
           ['₦0', 'delivery over ₦30,000'],
           ['Pay later', 'cash on delivery'],
         ].map(([big, small]) => (

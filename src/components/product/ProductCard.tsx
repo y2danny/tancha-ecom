@@ -6,7 +6,7 @@ import { Price } from '@/components/ui/Price'
 import { Rating } from '@/components/ui/Rating'
 import { Badge } from '@/components/ui/Badge'
 import { useCart } from '@/store/cart'
-import { discountPercent, formatCompact } from '@/lib/format'
+import { discountPercent, formatCompact, formatDayRange } from '@/lib/format'
 import { cn } from '@/lib/cn'
 
 export function ProductCard({
@@ -72,7 +72,7 @@ export function ProductCard({
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7rem] text-muted">
               <span className="inline-flex items-center gap-1">
                 <Truck size={12} />
-                {product.deliveryDaysMin}–{product.deliveryDaysMax} days
+                {formatDayRange(product.deliveryDaysMin, product.deliveryDaysMax)} days
               </span>
               {product.payOnDelivery && (
                 <span className="inline-flex items-center gap-1">

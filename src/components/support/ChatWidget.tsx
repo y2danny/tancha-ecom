@@ -16,7 +16,7 @@ const uid = () => Math.random().toString(36).slice(2, 10)
 const GREETING: ChatMessage = {
   id: 'greet',
   author: 'assistant',
-  body: 'Hi — Tancha assistant here. Ask me about the school list, delivery, payment, or any product. If you would rather speak to a person, just say so.',
+  body: 'Hi Tancha assistant here. Ask me about the school list, delivery, payment, or any product. If you would rather speak to a person, just say so.',
   createdAt: new Date().toISOString(),
   suggestions: ['What is on the school list?', 'How much is delivery?', 'Can I pay on delivery?'],
 }

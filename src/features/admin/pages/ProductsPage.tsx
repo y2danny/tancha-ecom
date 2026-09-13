@@ -24,7 +24,7 @@ function emptyDraft(categories: Category[]): NewProductInput {
   return {
     slug: '', name: '', hook: '', description: '', bullets: [], brand: 'Tancha',
     categoryId: categories[0]?.id ?? '', imageKey: 'notebook', imageUrl: null, gallery: [], priceKobo: 0, compareAtKobo: null,
-    stock: 0, tags: [], deliveryDaysMin: 2, deliveryDaysMax: 5, payOnDelivery: true, active: true, variants: [],
+    stock: 0, tags: [], deliveryDaysMin: 14, deliveryDaysMax: 14, payOnDelivery: true, active: true, variants: [],
   }
 }
 

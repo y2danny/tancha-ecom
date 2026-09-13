@@ -47,6 +47,12 @@ export function formatDate(iso: string) {
   }).format(new Date(iso))
 }
 
+/** "2–5" for a real range, or just "14" when a product's min and max
+ *  delivery days are the same — avoids showing a silly "14–14 days". */
+export function formatDayRange(min: number, max: number) {
+  return min === max ? `${min}` : `${min}–${max}`
+}
+
 export function formatDeliveryWindow(from: string, to: string) {
   const f = new Date(from)
   const t = new Date(to)

@@ -1,6 +1,6 @@
 import type { AssistantProvider, AssistantReply, ChatMessage } from '@/types/support'
 import { products, productBySlug } from '@/data/mock/products'
-import { formatNaira } from '@/lib/format'
+import { formatDayRange, formatNaira } from '@/lib/format'
 import { site } from '@/config/site'
 
 /**
@@ -57,7 +57,7 @@ const INTENTS: Intent[] = [
     id: 'delivery',
     test: /\b(deliver|delivery|shipping|how long|when will|arrive|dispatch)\b/i,
     handle: () => ({
-      body: `Two to five working days anywhere in Nigeria. Delivery is ${money(150_000)} flat, and free once your order passes ${money(site.freeDeliveryThresholdKobo)}. Lagos orders placed before noon usually go out the same day.`,
+      body: `Up to 14 days anywhere in Nigeria. Delivery is ${money(150_000)} flat, and free once your order passes ${money(site.freeDeliveryThresholdKobo)}.`,
       suggestions: ['Can I pay on delivery?', 'Do you deliver to Enugu?', 'Talk to a person'],
     }),
   },
@@ -165,7 +165,7 @@ export const localAssistant: AssistantProvider = {
       return {
         body:
           found.length === 1
-            ? `Found it — ${found[0].name}, ${money(found[0].priceKobo)}. Delivered in ${found[0].deliveryDaysMin}–${found[0].deliveryDaysMax} days.`
+            ? `Found it — ${found[0].name}, ${money(found[0].priceKobo)}. Delivered in ${formatDayRange(found[0].deliveryDaysMin, found[0].deliveryDaysMax)} days.`
             : 'These match what you described:',
         productIds: found.map((p) => p.id),
         suggestions: ['How much is delivery?', 'Can I pay on delivery?', 'Talk to a person'],
