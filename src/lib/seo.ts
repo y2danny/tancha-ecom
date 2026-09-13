@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 
 const SITE_TITLE = 'Tancha'
-const DEFAULT_TITLE = 'Tancha — Back-to-school essentials, producer direct'
+const DEFAULT_TITLE = 'Tancha — Everyday essentials, producer direct'
 const DEFAULT_DESCRIPTION =
-  'Backpacks, exercise books, uniforms, calculators and lunch flasks bought straight from the producers. Naira prices, nationwide delivery, pay on delivery in Lagos, Abuja and Port Harcourt.'
+  'Backpacks, phones, kitchenware, fashion and school essentials bought straight from the producers. Naira prices, nationwide delivery, pay on delivery in Lagos, Abuja and Port Harcourt.'
 
 function setMeta(name: string, content: string, attr: 'name' | 'property' = 'name') {
   let tag = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`)

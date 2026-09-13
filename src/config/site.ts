@@ -22,8 +22,8 @@ export const site = {
 }
 
 export const announcements = [
-  'Back-to-school season is live — up to 62% off essentials',
-  'Deposit only 10% on products over ₦30,000 now, pay the rest on delivery',
-  'Pay on delivery available in Lagos and Enugu',
+  'New: phones, home & fashion now on Tancha — direct from the producer',
+  'Free delivery on orders over ₦30,000 nationwide',
+  'Pay on delivery available in Lagos, Abuja & Port Harcourt',
   'Direct from the producer. No middleman markup.',
 ]

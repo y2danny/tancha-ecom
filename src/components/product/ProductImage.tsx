@@ -229,6 +229,38 @@ const ART: Record<ImageKey, Art> = {
       </>
     ),
   },
+  phone: {
+    ...P.slate,
+    draw: () => (
+      <>
+        <rect x="24" y="10" width="24" height="52" rx="6" fill="var(--b)" />
+        <rect x="27" y="17" width="18" height="34" rx="1.5" fill="#fff" />
+        <circle cx="36" cy="56" r="2.6" fill="var(--a)" />
+        <rect x="30" y="12.5" width="12" height="2.4" rx="1.2" fill="var(--a)" />
+      </>
+    ),
+  },
+  cookware: {
+    ...P.rose,
+    draw: () => (
+      <>
+        <path d="M16 32h40v10a16 16 0 0 1-16 16h-8a16 16 0 0 1-16-16z" fill="var(--b)" />
+        <rect x="12" y="28" width="48" height="6" rx="3" fill="var(--a)" />
+        <path d="M14 31h-6M64 31h-6" stroke="var(--a)" strokeWidth="3.4" strokeLinecap="round" />
+        <path d="M28 20c0-3 2-5 4-5s2 2 4 2 2-2 4-2 4 2 4 5" fill="none" stroke="var(--a)" strokeWidth="2.4" strokeLinecap="round" />
+      </>
+    ),
+  },
+  beauty: {
+    ...P.violet,
+    draw: () => (
+      <>
+        <rect x="30" y="10" width="12" height="10" rx="2" fill="var(--a)" />
+        <path d="M28 20h16l3 8-3 4v22a5 5 0 0 1-5 5h-6a5 5 0 0 1-5-5V32l-3-4z" fill="var(--b)" />
+        <rect x="27" y="31" width="18" height="7" fill="#fff" fillOpacity=".85" />
+      </>
+    ),
+  },
 }
 
 export function ProductImage({

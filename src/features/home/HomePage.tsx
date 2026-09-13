@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, GraduationCap, PackageCheck, Sparkles } from 'lucide-react'
+import { ArrowRight, PackageCheck, ShoppingBag, Sparkles } from 'lucide-react'
 import { db } from '@/data'
 import { useAsync } from '@/hooks/useAsync'
 import { categories } from '@/data/mock/categories'
@@ -12,7 +12,7 @@ import { DealStrip } from '@/components/product/DealStrip'
 import { SectionHeader } from '@/components/ui/SectionHeader'
 import { ButtonLink } from '@/components/ui/Button'
 import { Countdown } from '@/components/ui/Countdown'
-import type { ImageKey, Product } from '@/types/catalog'
+import type { Category, ImageKey, Product } from '@/types/catalog'
 
 /**
  * Each hero tile cycles through three products on its own offset timer, so the
@@ -138,24 +138,24 @@ function Hero() {
       <div className="grid items-center gap-6 p-6 sm:p-8 lg:grid-cols-[1.15fr_0.85fr] lg:p-10">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-400 px-3 py-1 text-xs font-bold uppercase tracking-wide text-navy-950">
-            <GraduationCap size={14} />
-            Back-to-school season
+            <Sparkles size={14} />
+            Direct from the producer
           </span>
 
           <h1 className="mt-4 text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
-            The whole school list.
+            Everything you need.
             <br />
             <span className="text-gold-300">Up to 62% off.</span>
           </h1>
 
           <p className="mt-4 max-w-lg text-sm leading-relaxed text-navy-100 sm:text-base">
-            Bags, books, uniforms, calculators, lunch flasks — bought straight from the producers
-            and sold at the price that leaves. No market markup, no three middlemen, no story.
+            Bags, phones, home essentials, fashion, school supplies — bought straight from the
+            producers and sold at the price that leaves. No market markup, no three middlemen, no story.
           </p>
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <ButtonLink to="/c/books-stationery" variant="deal" size="lg">
-              Shop the school list
+            <ButtonLink to="/search" variant="deal" size="lg">
+              Shop everything
               <ArrowRight size={17} />
             </ButtonLink>
             <ButtonLink
@@ -187,7 +187,7 @@ function Hero() {
 
       <div className="grid grid-cols-2 gap-px bg-white/10 sm:grid-cols-4">
         {[
-          ['62%', 'off school essentials'],
+          ['62%', 'off select items'],
           ['14 days', 'nationwide delivery'],
           ['₦0', 'delivery over ₦30,000'],
           ['Pay later', 'cash on delivery'],
@@ -202,23 +202,46 @@ function Hero() {
   )
 }
 
+/**
+ * The nav's category list (imported statically, same as Header/Footer) picks
+ * the slug, name, and icon shown here — but a category's *id* only matches
+ * real product rows through whichever backend is actually live (mock ids in
+ * mock mode, Supabase UUIDs in production). So the tile photo is found by
+ * first resolving each static category's slug to today's real id via
+ * listCategories(), then finding a product filed under that id with a real
+ * photo. Falls back to the illustration for a category nothing's been
+ * photographed for yet (exactly the new, still-empty Electronics & Gadgets
+ * category right now) — no edits needed here as photos get added later.
+ */
 function CategoryTiles() {
+  const { data: products } = useAsync(
+    () => db.catalog.listProducts({ perPage: 200 }),
+    [],
+    { items: [], total: 0, page: 1, perPage: 200, pageCount: 1 },
+  )
+  const { data: liveCategories } = useAsync(() => db.catalog.listCategories(), [], [] as Category[])
+  const liveIdBySlug = new Map(liveCategories.map((c) => [c.slug, c.id]))
+
   return (
     <section className="rounded-md bg-white shadow-card">
       <SectionHeader kicker="Start here" title="Shop by category" to="/c/books-stationery" />
       <div className="grid grid-cols-3 gap-px bg-hairline sm:grid-cols-6">
-        {categories.map((c) => (
-          <Link
-            key={c.id}
-            to={`/c/${c.slug}`}
-            className="group flex flex-col items-center gap-2 bg-white px-2 py-5 text-center transition-colors hover:bg-navy-50"
-          >
-            <span className="h-14 w-14 overflow-hidden rounded-full ring-1 ring-hairline transition-transform group-hover:scale-105">
-              <ProductImage imageKey={c.imageKey} alt={c.name} />
-            </span>
-            <span className="text-xs font-semibold leading-tight text-ink">{c.name}</span>
-          </Link>
-        ))}
+        {categories.map((c) => {
+          const liveId = liveIdBySlug.get(c.slug)
+          const photo = products.items.find((p) => p.categoryId === liveId && p.imageUrl)
+          return (
+            <Link
+              key={c.id}
+              to={`/c/${c.slug}`}
+              className="group flex flex-col items-center gap-2 bg-white px-2 py-5 text-center transition-colors hover:bg-navy-50"
+            >
+              <span className="h-14 w-14 overflow-hidden rounded-full ring-1 ring-hairline transition-transform group-hover:scale-105">
+                <ProductImage imageKey={c.imageKey} imageUrl={photo?.imageUrl ?? null} alt={c.name} />
+              </span>
+              <span className="text-xs font-semibold leading-tight text-ink">{c.name}</span>
+            </Link>
+          )
+        })}
       </div>
     </section>
   )
@@ -259,9 +282,9 @@ function TrustBand() {
           body: 'Power banks are capacity-tested per batch. Calculators are distributor-sourced.',
         },
         {
-          icon: GraduationCap,
-          title: 'Built around the school list',
-          body: 'Range picked from real Nigerian requirement lists, not a factory catalogue.',
+          icon: ShoppingBag,
+          title: 'Built around real shopping lists',
+          body: 'Range picked from what Nigerian households actually buy, not a factory catalogue.',
         },
       ].map(({ icon: Icon, title, body }) => (
         <div key={title} className="bg-white p-5">
@@ -357,7 +380,7 @@ function buildHeroSlides(): CarouselSlide[] {
     })),
     {
       id: 'brand-hero',
-      ariaLabel: "Tancha — the whole school list, up to 62% off",
+      ariaLabel: 'Tancha — everything you need, up to 62% off',
       render: () => <Hero />,
     },
   ]

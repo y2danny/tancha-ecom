@@ -21,7 +21,7 @@ export function DealsPage() {
           Today&apos;s deals
         </h1>
         <p className="mt-2 max-w-xl text-sm text-white/85">
-          Rotating back-to-school offers. When the timer runs out the price goes back up — that is
+          Rotating offers across every category. When the timer runs out the price goes back up — that is
           not a scarcity trick, it is how we clear producer batches.
         </p>
       </header>

@@ -14,6 +14,7 @@ import type { NewProductInput } from '@/types/admin'
 const IMAGE_KEYS: ImageKey[] = [
   'backpack', 'notebook', 'calculator', 'earbuds', 'powerbank', 'lunchbox', 'shoes', 'uniform',
   'trousers', 'skirt', 'sweater', 'pens', 'bottle', 'tablet', 'lamp', 'sportsbag', 'geometry', 'socks', 'crayons',
+  'phone', 'cookware', 'beauty',
 ]
 const TAGS: ProductTag[] = ['back-to-school', 'bestseller', 'new', 'clearance', 'bulk-discount', 'official-store']
 

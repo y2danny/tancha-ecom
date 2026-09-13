@@ -24,6 +24,9 @@ export type ImageKey =
   | 'geometry'
   | 'socks'
   | 'crayons'
+  | 'phone'
+  | 'cookware'
+  | 'beauty'
 
 export interface Category {
   id: string

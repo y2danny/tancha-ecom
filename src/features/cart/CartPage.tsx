@@ -19,10 +19,10 @@ export function CartPage() {
         <ShoppingCart className="mx-auto text-navy-200" size={56} />
         <h1 className="mt-4 text-xl font-bold">Your cart is empty</h1>
         <p className="mt-2 text-sm text-muted">
-          The back-to-school deals end when the timer does. Worth a look before then.
+          Today&apos;s deals end when the timer does. Worth a look before then.
         </p>
         <ButtonLink to="/" variant="deal" size="lg" className="mt-6">
-          Shop back-to-school deals
+          Shop today&apos;s deals
         </ButtonLink>
       </div>
     )
