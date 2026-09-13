@@ -23,7 +23,7 @@ export const site = {
 
 export const announcements = [
   'Back-to-school season is live — up to 62% off essentials',
-  'Free delivery on orders over ₦30,000 nationwide',
+  'Deposit only 10% on products over ₦30,000 now, pay the rest on delivery',
   'Pay on delivery available in Lagos and Enugu',
   'Direct from the producer. No middleman markup.',
 ]
