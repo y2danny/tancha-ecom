@@ -55,6 +55,15 @@ export const categories: Category[] = [
     productCount: 7,
     featured: true,
   },
+  {
+    id: 'cat_electronics',
+    slug: 'electronics-gadgets',
+    name: 'Electronics & Gadgets',
+    imageKey: 'tablet',
+    parentId: null,
+    productCount: 0,
+    featured: true,
+  },
 ]
 
 export const categoryById = new Map(categories.map((c) => [c.id, c]))
