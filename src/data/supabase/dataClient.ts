@@ -190,19 +190,52 @@ function productPatchToRow(patch: Partial<NewProductInput>) {
   return row
 }
 
+/**
+ * Retries only a genuinely dropped request — a flaky mobile connection,
+ * a DNS blip, a timeout mid-request — which surfaces as a *thrown* error
+ * from the underlying fetch. A real database error (bad input, an RLS
+ * denial) comes back as `{ error }` on a normally-*resolved* response, so
+ * it's never caught here and never retried; retrying that would just waste
+ * time reproducing the same failure three times.
+ *
+ * This is what was behind "saving a product works most of the time but
+ * randomly fails on mobile": the save flow makes several sequential
+ * round trips (insert/update, replace variants, re-fetch for display), and
+ * on a shaky mobile connection any single one of them dropping killed the
+ * whole operation — even the purely informational final re-fetch, which
+ * could fail *after* the actual write had already succeeded.
+ */
+async function withRetry<T>(fn: () => PromiseLike<T>, attempts = 3): Promise<T> {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn()
+    } catch (err) {
+      if (i === attempts - 1) throw err
+      await new Promise((resolve) => setTimeout(resolve, 350 * (i + 1)))
+    }
+  }
+  throw new Error('unreachable')
+}
+
 async function replaceVariants(productId: string, variants: NewProductInput['variants']) {
-  await supabase.from('product_variants').delete().eq('product_id', productId)
-  if (variants.length === 0) return
-  await supabase.from('product_variants').insert(
-    variants.map((v) => ({
-      product_id: productId,
-      option_name: v.optionName,
-      label: v.label,
-      price_kobo: v.priceKobo,
-      stock: v.stock,
-      sku: v.sku,
-    })),
+  const { error: deleteError } = await withRetry(() =>
+    supabase.from('product_variants').delete().eq('product_id', productId),
   )
+  if (deleteError) throw deleteError
+  if (variants.length === 0) return
+  const { error: insertError } = await withRetry(() =>
+    supabase.from('product_variants').insert(
+      variants.map((v) => ({
+        product_id: productId,
+        option_name: v.optionName,
+        label: v.label,
+        price_kobo: v.priceKobo,
+        stock: v.stock,
+        sku: v.sku,
+      })),
+    ),
+  )
+  if (insertError) throw insertError
 }
 
 const admin: AdminRepository = {
@@ -214,23 +247,71 @@ const admin: AdminRepository = {
 
   async createProduct(input) {
     const row = productPatchToRow(input)
-    const { data, error } = await supabase.from('products').insert(row).select(PRODUCT_SELECT).single()
+    const { data, error } = await withRetry(() =>
+      supabase.from('products').insert(row).select(PRODUCT_SELECT).single(),
+    )
     if (error) throw error
-    if (input.variants.length) await replaceVariants(data.id, input.variants)
-    const { data: fresh } = await supabase.from('products').select(PRODUCT_SELECT).eq('id', data.id).single()
-    return mapProduct(fresh ?? data)
+    if (!input.variants.length) return mapProduct(data)
+
+    await replaceVariants(data.id, input.variants)
+    try {
+      // The insert above already has every column except the variants we
+      // just wrote — refetch once more so the returned object is accurate.
+      const { data: fresh, error: freshError } = await withRetry(() =>
+        supabase.from('products').select(PRODUCT_SELECT).eq('id', data.id).single(),
+      )
+      if (freshError) throw freshError
+      return mapProduct(fresh)
+    } catch {
+      // The product and its variants are already saved (both calls above
+      // succeeded) — a flaky final refetch is cosmetic and must not be
+      // reported to the admin as a failed save.
+      return mapProduct(data)
+    }
   },
 
   async updateProduct(id, patch) {
     const row = productPatchToRow(patch)
+    let productRow: any = null
     if (Object.keys(row).length) {
-      const { error } = await supabase.from('products').update(row).eq('id', id)
+      // .select().single() here (rather than a bare update) both saves a
+      // round trip we'd otherwise spend re-fetching, and — as a bonus fix —
+      // turns a previously-silent RLS-blocked update (0 rows affected, no
+      // Postgres error) into a real, catchable error via PostgREST's
+      // "expected exactly one row" check.
+      const { data, error } = await withRetry(() =>
+        supabase.from('products').update(row).eq('id', id).select(PRODUCT_SELECT).single(),
+      )
       if (error) throw error
+      productRow = data
     }
-    if (patch.variants) await replaceVariants(id, patch.variants)
-    const { data, error } = await supabase.from('products').select(PRODUCT_SELECT).eq('id', id).single()
-    if (error) throw error
-    return mapProduct(data)
+    if (patch.variants) {
+      await replaceVariants(id, patch.variants)
+      try {
+        // Variants changed after productRow was fetched (or nothing else
+        // changed and we never fetched it) — refetch for accurate data.
+        const { data, error } = await withRetry(() =>
+          supabase.from('products').select(PRODUCT_SELECT).eq('id', id).single(),
+        )
+        if (error) throw error
+        productRow = data
+      } catch {
+        // The update and variant writes above already succeeded — don't
+        // fail the save over a flaky informational refetch. Fall back to
+        // whatever we already have; if we have nothing (a variants-only
+        // edit whose refetch also failed), say so honestly rather than
+        // guessing at the product's current state.
+        if (!productRow) throw new Error('Saved, but could not load the latest details — refresh to check.')
+      }
+    }
+    if (!productRow) {
+      // Neither branch above ran (an empty patch with no variants field) —
+      // nothing was actually written, so fetch the current row to return.
+      const { data, error } = await withRetry(() => supabase.from('products').select(PRODUCT_SELECT).eq('id', id).single())
+      if (error) throw error
+      productRow = data
+    }
+    return mapProduct(productRow)
   },
 
   async setProductActive(id, active) {
