@@ -6,7 +6,7 @@ import type {
   AdminRepository, InventoryAdjustment, InventoryMovementRecord, NewDealInput, NewProductInput,
 } from '@/types/admin'
 import type { CatalogRepository, DataClient, DealRepository, OrderRepository } from '../repository'
-import { supabase, functionsUrl } from './client'
+import { supabase, functionsUrl, ensureFreshSession } from './client'
 import { mapCategory, mapDeal, mapOrder, mapProduct, mapReview, mapTeamMember } from './mappers'
 
 const PRODUCT_SELECT = '*, product_variants(*)'
@@ -246,6 +246,11 @@ const admin: AdminRepository = {
   },
 
   async createProduct(input) {
+    // A stale session (the tab was backgrounded — e.g. the system photo
+    // picker was open — long enough for the access token to expire) makes
+    // this write fail outright with an auth error no amount of retrying
+    // fixes. Refresh first so that can't happen.
+    await ensureFreshSession()
     const row = productPatchToRow(input)
     const { data, error } = await withRetry(() =>
       supabase.from('products').insert(row).select(PRODUCT_SELECT).single(),
@@ -271,6 +276,10 @@ const admin: AdminRepository = {
   },
 
   async updateProduct(id, patch) {
+    // Same stale-session guard as createProduct — this is the save path the
+    // admin actually hits every time they edit a product, so it's the one
+    // most likely to land right after the tab was backgrounded.
+    await ensureFreshSession()
     const row = productPatchToRow(patch)
     let productRow: any = null
     if (Object.keys(row).length) {
