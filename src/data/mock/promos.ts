@@ -16,6 +16,12 @@ export type PromoBanner = {
 
 export const promoBanners: PromoBanner[] = [
   {
+    id: 'new-categories-launch',
+    image: '/images/promos/new-categories-launch.jpg',
+    alt: 'New on Tancha: 4 new categories — Electronics, Phones, Home and Fashion — same producer prices',
+    href: '/search',
+  },
+  {
     id: 'complete-backpack-set',
     image: '/images/promos/complete-backpack-set.jpg',
     alt: 'Complete Backpack Set — backpack, lunch bag, pencil case and pouch, all four pieces for ₦20,000, while stock lasts',
