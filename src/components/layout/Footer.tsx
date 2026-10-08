@@ -87,7 +87,7 @@ export function Footer() {
               <li className="flex items-start gap-2"><MapPin size={15} className="mt-0.5" /> Lagos, Nigeria</li>
             </ul>
             <div className="mt-4 rounded-md bg-white/5 p-3">
-              <p className="text-xs font-semibold text-white">Secured by Paystack</p>
+              <p className="text-xs font-semibold text-white">Secured by Flutterwave</p>
               <p className="mt-1 text-xs text-navy-300">
                 Card, transfer, USSD and bank — or pay the rider on delivery.
               </p>

@@ -8,22 +8,25 @@ implementation — the app already uses it automatically once
 `src/data/index.ts`). No component changes are needed either way.
 
 For the full setup runbook — creating the project, running the schema,
-deploying the Edge Functions in `supabase/functions/`, Paystack keys, and
+deploying the Edge Functions in `supabase/functions/`, Flutterwave keys, and
 environment variables — see [`HANDOFF.md`](../../../HANDOFF.md) at the repo
 root.
 
 ## Rules that are not negotiable
 
-- **Money is `bigint` kobo.** Paystack works in kobo. Floats introduce
-  rounding errors you will discover during a reconciliation, not before.
+- **Money is `bigint` kobo.** Flutterwave's API itself wants naira (major
+  units), so the `checkout` function converts at that one boundary — floats
+  introduce rounding errors you will discover during a reconciliation, not
+  before.
 - **Orders are created server-side**, by the `checkout` Edge Function
   (`supabase/functions/checkout`). The browser sends product IDs and
   quantities; the function re-reads live prices and computes the total. A
   client-supplied total would be a discount coupon for anyone with devtools.
 - **Payment confirmation comes from the webhook, never the redirect.**
-  `supabase/functions/paystack-webhook` verifies `x-paystack-signature` as
-  HMAC-SHA512 of the raw request body using the secret key before marking an
-  order paid. The browser's post-payment redirect is just a UX nicety.
+  `supabase/functions/flutterwave-webhook` checks the `verif-hash` header
+  against a shared secret, then re-verifies the transaction against
+  Flutterwave's own API before marking an order paid. The browser's
+  post-payment redirect is just a UX nicety.
 - **Inventory changes only through `inventory_movements`.** A trigger keeps
   `products.stock` / `product_variants.stock` in sync, so every change keeps
   an audit trail for free — never `update products set stock = ...` directly.

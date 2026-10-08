@@ -151,7 +151,7 @@ export function CartPage() {
             </ButtonLink>
 
             <p className="mt-3 text-center text-xs text-muted">
-              Card, transfer, USSD via Paystack — or pay the rider on delivery.
+              Card, transfer, USSD via Flutterwave — or pay the rider on delivery.
             </p>
           </div>
         </div>

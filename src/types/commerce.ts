@@ -1,6 +1,6 @@
 import type { Product, ProductVariant } from './catalog'
 
-export type PaymentMethod = 'paystack' | 'pay_on_delivery'
+export type PaymentMethod = 'flutterwave' | 'pay_on_delivery'
 
 export type OrderStatus =
   | 'pending_payment'
@@ -37,7 +37,7 @@ export interface CartTotals {
 
 export interface DeliveryAddress {
   fullName: string
-  /** Required to pay by Paystack — it needs somewhere to send the receipt. */
+  /** Required to pay by Flutterwave — it needs somewhere to send the receipt. */
   email?: string
   phone: string
   altPhone?: string

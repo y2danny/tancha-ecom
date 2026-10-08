@@ -11,7 +11,7 @@ export const site = {
   supportEmail: 'hello@tancha.ng',
   freeDeliveryThresholdKobo: 3_000_000, // ₦30,000
   currency: 'NGN',
-  paymentMethods: ['paystack', 'pay_on_delivery'] as const,
+  paymentMethods: ['flutterwave', 'pay_on_delivery'] as const,
   serviceCities: ['Lagos', 'Abuja', 'Port Harcourt', 'Ibadan', 'Kano', 'Enugu'],
   socials: {
     instagram: 'https://instagram.com/tancha.ng',

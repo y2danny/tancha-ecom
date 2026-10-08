@@ -28,7 +28,7 @@ interface DraftIn {
     street: string
     landmark?: string
   }
-  paymentMethod: 'paystack' | 'pay_on_delivery'
+  paymentMethod: 'flutterwave' | 'pay_on_delivery'
 }
 
 Deno.serve(async (req) => {
@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const paystackSecret = Deno.env.get('PAYSTACK_SECRET_KEY')
+  const flutterwaveSecret = Deno.env.get('FLUTTERWAVE_SECRET_KEY')
   const admin = createClient(supabaseUrl, serviceKey)
 
   // Identify the caller if signed in — guest checkout stays allowed, the
@@ -60,8 +60,8 @@ Deno.serve(async (req) => {
   const { lines, draft } = body
   if (!Array.isArray(lines) || lines.length === 0) return json({ error: 'Cart is empty' }, 400)
   if (!draft?.address?.phone || !draft?.address?.fullName) return json({ error: 'Missing delivery address' }, 400)
-  if (draft.paymentMethod === 'paystack' && !draft.address.email) {
-    return json({ error: 'Email is required to pay with Paystack' }, 400)
+  if (draft.paymentMethod === 'flutterwave' && !draft.address.email) {
+    return json({ error: 'Email is required to pay with Flutterwave' }, 400)
   }
 
   // ── Re-price from the live tables. This is the whole point of this function. ──
@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
   await admin.from('order_items').insert(orderItems.map((it) => ({ ...it, order_id: order.id })))
 
   // Pay on delivery is "sold" the moment the order is placed — nothing else
-  // will ever confirm it, unlike Paystack's webhook.
+  // will ever confirm it, unlike Flutterwave's webhook.
   if (draft.paymentMethod === 'pay_on_delivery') {
     await admin.from('inventory_movements').insert(
       stockOk.map((s) => ({
@@ -163,30 +163,36 @@ Deno.serve(async (req) => {
     return json({ order: full ?? order })
   }
 
-  // ── Paystack ──
-  if (!paystackSecret) {
-    return json({ error: 'Paystack is not configured on the server yet (PAYSTACK_SECRET_KEY secret missing)' }, 500)
+  // ── Flutterwave ──
+  if (!flutterwaveSecret) {
+    return json({ error: 'Flutterwave is not configured on the server yet (FLUTTERWAVE_SECRET_KEY secret missing)' }, 500)
   }
   const origin = body.origin || Deno.env.get('PUBLIC_SITE_URL') || ''
-  const initRes = await fetch('https://api.paystack.co/transaction/initialize', {
+  const initRes = await fetch('https://api.flutterwave.com/v3/payments', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${paystackSecret}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${flutterwaveSecret}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      email: draft.address.email,
-      amount: totalKobo, // Paystack NGN amounts are in kobo — matches our convention exactly
-      reference,
-      callback_url: origin ? `${origin}/order/${reference}` : undefined,
-      metadata: { order_id: order.id, reference },
+      tx_ref: reference,
+      amount: totalKobo / 100, // Flutterwave wants the major unit (naira), not kobo — unlike Paystack
+      currency: 'NGN',
+      redirect_url: origin ? `${origin}/order/${reference}` : undefined,
+      customer: {
+        email: draft.address.email,
+        phonenumber: draft.address.phone,
+        name: draft.address.fullName,
+      },
+      customizations: { title: 'Tancha', description: `Order ${reference}` },
+      meta: { order_id: order.id, reference },
     }),
   })
   const initJson = await initRes.json()
-  if (!initRes.ok || !initJson.status) {
-    // Don't leave an orphaned pending order behind if Paystack itself rejected the request.
+  if (!initRes.ok || initJson.status !== 'success') {
+    // Don't leave an orphaned pending order behind if Flutterwave itself rejected the request.
     await admin.from('orders').update({ status: 'cancelled' }).eq('id', order.id)
-    return json({ error: initJson.message ?? 'Could not start the Paystack transaction' }, 502)
+    return json({ error: initJson.message ?? 'Could not start the Flutterwave transaction' }, 502)
   }
 
-  await admin.from('orders').update({ paystack_reference: reference }).eq('id', order.id)
+  await admin.from('orders').update({ flutterwave_reference: reference }).eq('id', order.id)
   const { data: full } = await admin.from('orders').select('*, order_items(*)').eq('id', order.id).single()
-  return json({ order: full ?? order, authorization_url: initJson.data.authorization_url })
+  return json({ order: full ?? order, authorization_url: initJson.data.link })
 })

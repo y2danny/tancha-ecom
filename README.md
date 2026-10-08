@@ -18,7 +18,7 @@ and it switches to the live backend with no code changes.
 
 **Storefront:** homepage with rotating deal strips and live countdowns,
 category listing with filters and sort, product detail with variants and
-reviews, cart, checkout (Paystack + pay-on-delivery), order confirmation with
+reviews, cart, checkout (Flutterwave + pay-on-delivery), order confirmation with
 live status polling, deals page, legal pages (privacy / terms / returns), a
 real 404 page, and a persistent AI chat widget that escalates to WhatsApp.
 
@@ -31,7 +31,8 @@ assign roles).
 **Backend** (Supabase): Postgres schema with row-level security enforcing
 every role boundary at the database layer, plus four Edge Functions —
 `checkout` (server-side re-pricing and stock validation — the client never
-sends a total), `paystack-webhook` (HMAC-verified payment confirmation —
+sends a total), `flutterwave-webhook` (shared-secret-verified payment
+confirmation —
 never trusts the browser redirect), `order-lookup` (guest order lookup by
 reference), `invite-team-member` (owner-only staff invites).
 
@@ -41,7 +42,7 @@ contrast, keyboard focus states, and a GitHub Actions CI workflow that lints
 and type-checks/builds on every push.
 
 Nothing is a placeholder. Everything above works end to end in mock mode
-today, and against live Supabase/Paystack once configured — see
+today, and against live Supabase/Flutterwave once configured — see
 [`HANDOFF.md`](./HANDOFF.md) for exact setup steps.
 
 ## Architecture — the parts that matter later
@@ -59,7 +60,7 @@ src/
   components/       ui primitives, layout, product, brand, support
   features/         one folder per page area (catalog, cart, checkout, admin, legal, ...)
 supabase/
-  functions/        Deno Edge Functions — checkout, paystack-webhook, order-lookup, invite-team-member
+  functions/        Deno Edge Functions — checkout, flutterwave-webhook, order-lookup, invite-team-member
 ```
 
 **No component imports mock or Supabase code directly.** Every screen calls
@@ -70,13 +71,16 @@ backends are interchangeable because they implement the same
 ### Rules baked in on purpose
 
 - **Money is integer kobo everywhere.** `formatNaira()` is the only thing that
-  renders it. Paystack is kobo-denominated; floats and currency do not mix.
+  renders it. Flutterwave's API wants naira (major units), so the `checkout`
+  function converts at that one boundary — floats and currency do not mix
+  anywhere else.
 - **The client never computes or sends an order total.** The `checkout` Edge
   Function re-prices every line from the live database and is the sole
   source of truth. A tampered client request cannot produce a cheaper order.
-- **A payment is only confirmed by Paystack's webhook**, verified by
-  HMAC-SHA512 signature. The post-payment redirect is a UX convenience, never
-  proof of payment — it can be closed, skipped, or faked.
+- **A payment is only confirmed by Flutterwave's webhook**, verified by a
+  shared-secret header plus a live re-check against Flutterwave's API. The
+  post-payment redirect is a UX convenience, never proof of payment — it can
+  be closed, skipped, or faked.
 - **Cart lines snapshot their unit price.** A price change mid-session must
   not silently reprice someone's cart.
 - **Roles are defined in `types/identity.ts` and enforced in Postgres RLS**
@@ -114,5 +118,5 @@ surfaces); drop in a vector original at `public/logo.svg` and repoint
 ## Setup, deployment, and handoff
 
 See [`HANDOFF.md`](./HANDOFF.md) for the full runbook: creating the Supabase
-project, running the schema, deploying the Edge Functions, Paystack keys and
+project, running the schema, deploying the Edge Functions, Flutterwave keys and
 webhook registration, environment variables, and deploying to Vercel.

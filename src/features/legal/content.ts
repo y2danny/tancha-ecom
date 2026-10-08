@@ -16,7 +16,7 @@ export interface LegalDoc {
 /**
  * Drafted to be NDPR-aware (Nigeria Data Protection Regulation / Nigeria
  * Data Protection Act 2023) and to match what the storefront actually does
- * today — Paystack for card/transfer/USSD, pay-on-delivery in Lagos, Abuja
+ * today — Flutterwave for card/transfer/USSD, pay-on-delivery in Lagos, Abuja
  * and Port Harcourt, a 7-day return window. This is a solid starting draft,
  * not legal advice — have a Nigerian lawyer review it before launch,
  * especially the NDPA sections once the customer-accounts and AI-chat data
@@ -33,7 +33,7 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
         heading: '1. What we collect',
         body: [
           'Account and order details you give us directly: full name, phone number, delivery address, and email if you pay by card, transfer or USSD.',
-          'Payment information is handled entirely by Paystack, our licensed payment processor. We never receive or store your card number, CVV or PIN — our servers only ever see a payment reference and a success or failure status.',
+          'Payment information is handled entirely by Flutterwave, our licensed payment processor. We never receive or store your card number, CVV or PIN — our servers only ever see a payment reference and a success or failure status.',
           'Order history, items viewed and basic device/browser information, used to keep the site working and to show you relevant products.',
           'If you use the chat widget, we keep the conversation so our support team (and the assistant) can help you and follow up.',
         ],
@@ -50,7 +50,7 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
       {
         heading: '3. Who we share it with',
         body: [
-          'Paystack, to process payments.',
+          'Flutterwave, to process payments.',
           'Our delivery partners/riders, limited to the name, phone number and address needed to complete your delivery.',
           'Supabase, our database and authentication provider, which stores the data described above on our behalf under a data processing arrangement.',
           'We do not sell your personal data. We do not share it with advertisers.',
@@ -101,7 +101,7 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
       {
         heading: '3. Payment',
         body: [
-          'Card, bank transfer, USSD and direct debit payments are processed by Paystack. An order paid this way is only confirmed once Paystack confirms the payment to us — usually within seconds.',
+          'Card, bank transfer, USSD and direct debit payments are processed by Flutterwave. An order paid this way is only confirmed once Flutterwave confirms the payment to us — usually within seconds.',
           `Pay-on-delivery is available in ${site.serviceCities.slice(0, 3).join(', ')}. You may open and inspect the item before paying the rider.`,
         ],
       },
@@ -155,7 +155,7 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
       {
         heading: '4. Refunds',
         body: [
-          'Once we receive and check the returned item, refunds for card/transfer/USSD payments are sent back to the original payment method via Paystack, typically within 5–7 working days.',
+          'Once we receive and check the returned item, refunds for card/transfer/USSD payments are sent back to the original payment method via Flutterwave, typically within 5–7 working days.',
           'Pay-on-delivery refunds are sent by bank transfer to an account you provide, since there is no card or transfer to reverse.',
           'You may choose a replacement or store credit instead of a refund where that is faster — for example, a straightforward size exchange.',
         ],

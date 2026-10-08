@@ -384,12 +384,13 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
-# Paystack calls this directly (server-to-server) with no Supabase session,
-# so it must not require a Supabase JWT - the function verifies Paystack's
-# own x-paystack-signature header itself instead. Every other function
+# Flutterwave calls this directly (server-to-server) with no Supabase session,
+# so it must not require a Supabase JWT - the function verifies Flutterwave's
+# own verif-hash header itself instead (plus a live re-verify call against the
+# Flutterwave API — see the comments in the function). Every other function
 # keeps the default (JWT required, since the app calls them with the
 # signed-in user's session or the anon key).
-[functions.paystack-webhook]
+[functions.flutterwave-webhook]
 verify_jwt = false
 
 [analytics]

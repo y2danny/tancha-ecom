@@ -1,7 +1,7 @@
 /**
  * Money is stored in kobo (integer) everywhere in the domain layer.
  * Floats and currency do not mix — this is the one rule that saves an
- * accounting nightmare once real Paystack settlements start landing.
+ * accounting nightmare once real Flutterwave settlements start landing.
  */
 
 const nairaFormatter = new Intl.NumberFormat('en-NG', {

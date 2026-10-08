@@ -9,7 +9,7 @@ import { site } from '@/config/site'
 import { ButtonLink } from '@/components/ui/Button'
 import type { Order } from '@/types/commerce'
 
-/** Paystack's redirect lands here before the webhook has necessarily landed —
+/** Flutterwave's redirect lands here before the webhook has necessarily landed —
  *  poll briefly rather than telling the customer "confirmed" too early. */
 function usePolledOrder(reference: string | undefined) {
   const { data, loading } = useAsync(() => db.orders.getOrder(reference ?? ''), [reference], null as Order | null)
@@ -70,7 +70,7 @@ export function OrderConfirmationPage() {
         </h1>
         <p className="mt-2 text-sm text-muted">
           {pending
-            ? 'Paystack says you paid — we are waiting for the final confirmation from our side. This page updates itself, no need to refresh.'
+            ? 'Flutterwave says you paid — we are waiting for the final confirmation from our side. This page updates itself, no need to refresh.'
             : order.paymentMethod === 'pay_on_delivery'
               ? 'Our rep will call to confirm before dispatch. Have the cash or transfer ready for the rider.'
               : 'Payment received. Your order is being prepared.'}

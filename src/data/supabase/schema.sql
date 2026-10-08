@@ -11,7 +11,7 @@ create extension if not exists "pg_trgm";      -- fast fuzzy product search
 -- ── Enums ───────────────────────────────────────────────────────────────────
 create type app_role as enum ('owner','admin','catalog_manager','support_agent','customer');
 create type order_status as enum ('pending_payment','confirmed','packed','in_transit','delivered','cancelled','returned');
-create type payment_method as enum ('paystack','pay_on_delivery');
+create type payment_method as enum ('flutterwave','pay_on_delivery');
 create type deal_kind as enum ('day','week','bundle');
 create type chat_status as enum ('bot','escalation_requested','with_agent','closed');
 
@@ -158,8 +158,8 @@ create table orders (
   delivery_kobo     bigint not null default 0,
   discount_kobo     bigint not null default 0,
   total_kobo        bigint not null,
-  -- Paystack
-  paystack_reference text unique,
+  -- Flutterwave
+  flutterwave_reference text unique,
   paid_at            timestamptz,
   -- Delivery
   full_name    text not null,
@@ -414,11 +414,12 @@ create trigger order_status_logged
 
 -- ============================================================================
 -- Edge Functions to write next (server-side, service-role key):
---   POST /checkout          validate cart against live prices, create order,
---                           init Paystack transaction, return authorization_url
---   POST /paystack-webhook  verify x-paystack-signature (HMAC SHA512 of the raw
---                           body with the secret key), then mark paid + decrement
---                           inventory. NEVER trust the browser's success callback.
+--   POST /checkout             validate cart against live prices, create order,
+--                              init a Flutterwave transaction, return authorization_url
+--   POST /flutterwave-webhook  verify the verif-hash header against a shared secret,
+--                              re-verify the transaction against Flutterwave's API,
+--                              then mark paid + decrement inventory. NEVER trust the
+--                              browser's success callback.
 --   POST /assistant         model call with catalog context; writes to chat_messages
 --   POST /escalate          flips chat_sessions.status and pings the rep's WhatsApp
 -- ============================================================================

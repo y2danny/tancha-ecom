@@ -26,7 +26,7 @@ export function CheckoutPage() {
   const { lines: rawLines, clear } = useCart()
   const { lines, totals } = useResolvedCart()
   const [submitting, setSubmitting] = useState(false)
-  const [method, setMethod] = useState<PaymentMethod>('paystack')
+  const [method, setMethod] = useState<PaymentMethod>('flutterwave')
   const [address, setAddress] = useState<DeliveryAddress>({
     fullName: '', email: '', phone: '', altPhone: '', city: '', state: 'Lagos', street: '', landmark: '',
   })
@@ -43,7 +43,7 @@ export function CheckoutPage() {
       next.phone = 'Enter a valid Nigerian number, e.g. 0803 123 4567'
     if (address.street.trim().length < 6) next.street = 'Street address is too short'
     if (address.city.trim().length < 2) next.city = 'Which city?'
-    if (method === 'paystack' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address.email ?? ''))
+    if (method === 'flutterwave' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address.email ?? ''))
       next.email = 'Enter the email your receipt should go to'
     setErrors(next)
     return Object.keys(next).length === 0
@@ -58,7 +58,7 @@ export function CheckoutPage() {
     setSubmitting(true)
     try {
       // In production this posts to the /checkout Edge Function, which
-      // re-prices the cart server-side and, for Paystack, returns an
+      // re-prices the cart server-side and, for Flutterwave, returns an
       // authorization_url — the client never computes or sends a total.
       const { order, authorizationUrl } = await db.orders.placeOrder({
         lines: rawLines,
@@ -120,8 +120,8 @@ export function CheckoutPage() {
                   placeholder="you@example.com"
                 />
                 {errors.email && <p className="mt-1 text-xs text-flash-dark">{errors.email}</p>}
-                {method === 'paystack' && !errors.email && (
-                  <p className="mt-1 text-xs text-muted">Your Paystack receipt goes here.</p>
+                {method === 'flutterwave' && !errors.email && (
+                  <p className="mt-1 text-xs text-muted">Your Flutterwave receipt goes here.</p>
                 )}
               </div>
 
@@ -191,21 +191,21 @@ export function CheckoutPage() {
             <div className="space-y-3">
               <label
                 className={
-                  method === 'paystack'
+                  method === 'flutterwave'
                     ? 'flex cursor-pointer gap-3 rounded-md border-2 border-navy-700 bg-navy-50 p-4'
                     : 'flex cursor-pointer gap-3 rounded-md border border-hairline p-4 hover:border-navy-300'
                 }
               >
                 <input
-                  type="radio" name="payment" checked={method === 'paystack'}
-                  onChange={() => setMethod('paystack')} className="mt-1 accent-navy-700"
+                  type="radio" name="payment" checked={method === 'flutterwave'}
+                  onChange={() => setMethod('flutterwave')} className="mt-1 accent-navy-700"
                 />
                 <div className="flex-1">
                   <p className="flex items-center gap-2 text-sm font-bold">
-                    <CreditCard size={16} /> Pay now with Paystack
+                    <CreditCard size={16} /> Pay now with Flutterwave
                   </p>
                   <p className="mt-1 text-xs text-muted">
-                    Card, bank transfer, USSD or direct debit. Secured by Paystack — we never see
+                    Card, bank transfer, USSD or direct debit. Secured by Flutterwave — we never see
                     your card details.
                   </p>
                 </div>
@@ -290,7 +290,7 @@ export function CheckoutPage() {
               <Lock size={15} />
               {submitting
                 ? 'Placing order…'
-                : method === 'paystack'
+                : method === 'flutterwave'
                   ? `Pay ${formatNaira(totals.totalKobo)}`
                   : 'Confirm order'}
             </Button>

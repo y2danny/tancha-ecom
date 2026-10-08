@@ -7,7 +7,7 @@ handful of commands.
 
 Everything here assumes you already have:
 - A Supabase account (free tier is enough to start).
-- A Paystack account (Nigerian business registration is needed to go from
+- A Flutterwave account (Nigerian business registration is needed to go from
   test mode to live payouts — test mode works with no registration).
 - Somewhere to deploy the frontend (these steps use Vercel; any static host
   that serves a Vite SPA works the same way).
@@ -46,7 +46,7 @@ Everything here assumes you already have:
 
 ## 2. Deploy the Edge Functions
 
-The four functions in `supabase/functions/` (`checkout`, `paystack-webhook`,
+The four functions in `supabase/functions/` (`checkout`, `flutterwave-webhook`,
 `order-lookup`, `invite-team-member`) are the only code allowed to write
 orders, confirm payments, or invite staff — they run with the service-role
 key so they can bypass RLS deliberately, in the one place that's supposed to.
@@ -63,43 +63,57 @@ supabase init                  # one-time — creates supabase/config.toml;
 supabase login                 # opens a browser to authenticate the CLI
 supabase link --project-ref oweyocwbtodadbxtsltv
 supabase functions deploy checkout
-supabase functions deploy paystack-webhook
+supabase functions deploy flutterwave-webhook
 supabase functions deploy order-lookup
 supabase functions deploy invite-team-member
 ```
 
-Then set the two secrets the functions need (everything else — `SUPABASE_URL`,
+Then set the three secrets the functions need (everything else — `SUPABASE_URL`,
 `SUPABASE_SERVICE_ROLE_KEY` — is injected automatically by the Edge runtime):
 
 ```bash
-supabase secrets set PAYSTACK_SECRET_KEY=sk_test_xxxxxxxx
+supabase secrets set FLUTTERWAVE_SECRET_KEY=FLWSECK_TEST-xxxxxxxx
+supabase secrets set FLUTTERWAVE_SECRET_HASH=some-random-string-you-pick
 supabase secrets set PUBLIC_SITE_URL=https://your-domain.example
 ```
 
-`PUBLIC_SITE_URL` is where Paystack sends the shopper back to after paying
+`FLUTTERWAVE_SECRET_HASH` is a shared secret you invent — put the exact same
+string in the Flutterwave dashboard's webhook settings (step 3 below); it's
+how the webhook function knows a call really came from Flutterwave.
+`PUBLIC_SITE_URL` is where Flutterwave sends the shopper back to after paying
 (`/order/<reference>`) — set it to wherever step 4 ends up deploying the
 frontend.
 
-## 3. Paystack keys and the webhook
+## 3. Flutterwave keys and the webhook
 
-1. In the Paystack dashboard, under **Settings → API Keys & Webhooks**, copy
-   the **test** secret key (`sk_test_...`) and public key (`pk_test_...`) to
-   start — switch to live keys only once you're ready to take real money.
-2. Set `PAYSTACK_SECRET_KEY` as shown above — that's the only Paystack key
-   this app needs anywhere. The checkout flow redirects to Paystack's own
-   hosted payment page (the `authorization_url` the `checkout` function gets
-   back from Paystack), so there is no public key to wire into the frontend
-   at all; the secret key lives only in the Edge Function secrets, never in
-   a `.env` file or in the browser.
-3. Register the webhook: **Settings → API Keys & Webhooks → Webhook URL** →
-   `https://<your-project-ref>.supabase.co/functions/v1/paystack-webhook`.
-   This is what actually confirms an order as paid — the browser redirect
-   after payment is just a nice loading screen, never trusted on its own.
-4. Test it: place a test order with card `4084 0840 8408 4081`, any future
-   expiry, CVV `408`, OTP `123456` (Paystack's standard test card). The order
-   should flip from "Confirming your payment" to "Order confirmed" within a
-   few seconds on the confirmation page, and you should see the webhook
-   delivery logged as successful in the Paystack dashboard.
+1. In the Flutterwave dashboard, under **Settings → API Keys**, copy the
+   **test** secret key (`FLWSECK_TEST-...`) to start — switch to the live
+   secret key (`FLWSECK-...`) only once you're ready to take real money.
+2. Set `FLUTTERWAVE_SECRET_KEY` as shown above — that's the only Flutterwave
+   key this app needs anywhere. The checkout flow redirects to Flutterwave's
+   own hosted payment page (the `link` the `checkout` function gets back from
+   Flutterwave, returned to the frontend as `authorization_url`), so there is
+   no public key to wire into the frontend at all; the secret key lives only
+   in the Edge Function secrets, never in a `.env` file or in the browser.
+3. Register the webhook: **Settings → Webhooks → Webhook URL** →
+   `https://<your-project-ref>.supabase.co/functions/v1/flutterwave-webhook`.
+   On the same screen, set a **Secret Hash** — any random string you choose
+   — and set that exact string as `FLUTTERWAVE_SECRET_HASH` (step above).
+   Flutterwave sends that string back on every webhook call as the
+   `verif-hash` header, which is how the function confirms a call really
+   came from Flutterwave (Flutterwave doesn't sign webhooks with an HMAC the
+   way Paystack does, so this shared-secret match is what stands in for
+   that). This webhook is what actually confirms an order as paid — the
+   browser redirect after payment is just a nice loading screen, never
+   trusted on its own.
+4. Test it: place a test order using the test card your Flutterwave
+   dashboard's test-mode panel shows you (**Settings → API Keys**, or the
+   hosted payment page itself during a test transaction lists one) — it's
+   worth reading off the dashboard rather than a number written down here,
+   since Flutterwave updates these occasionally. The order should flip from
+   "Confirming your payment" to "Order confirmed" within a few seconds on
+   the confirmation page, and you should see the webhook delivery logged as
+   successful in the Flutterwave dashboard.
 
 ## 4. Environment variables and deploying the frontend
 
@@ -138,18 +152,18 @@ ever changes, it's the same three files, a find-and-replace is enough.
 ## 5. Go-live checklist
 
 - [ ] Schema run, owner account created and can sign in at `/admin/login`.
-- [ ] All four Edge Functions deployed; `PAYSTACK_SECRET_KEY` and
-      `PUBLIC_SITE_URL` secrets set.
-- [ ] Paystack webhook URL registered and a test payment confirms correctly.
+- [ ] All four Edge Functions deployed; `FLUTTERWAVE_SECRET_KEY`,
+      `FLUTTERWAVE_SECRET_HASH` and `PUBLIC_SITE_URL` secrets set.
+- [ ] Flutterwave webhook URL registered and a test payment confirms correctly.
 - [ ] Frontend deployed with the two `VITE_...` env vars set in Vercel.
 - [ ] Signed in as owner, invited the real staff accounts from **Admin → Team**
       (each invite is an email with a set-password link — owner role is
       never assigned by invite, only by the first-signup trigger above).
 - [ ] Added or edited real products/categories/deals from the admin console,
       removed any seed data you don't want.
-- [ ] Switched `PAYSTACK_SECRET_KEY` from `sk_test_...` to the live
-      `sk_live_...` equivalent once Paystack has approved the business for
-      live payouts (`supabase secrets set PAYSTACK_SECRET_KEY=sk_live_...`).
+- [ ] Switched `FLUTTERWAVE_SECRET_KEY` from `FLWSECK_TEST-...` to the live
+      `FLWSECK-...` equivalent once Flutterwave has approved the business for
+      live payouts (`supabase secrets set FLUTTERWAVE_SECRET_KEY=FLWSECK-...`).
 - [x] Domain purchased (`tancha.com.ng`, via Whogohost) and SEO tags in
       `index.html`/`public/sitemap.xml`/`public/robots.txt` updated to match.
       Still to do: point its DNS at the Vercel deployment once that exists
@@ -165,5 +179,5 @@ ever changes, it's the same three files, a find-and-replace is enough.
 - Database schema and the policies behind every role:
   `src/data/supabase/schema.sql`.
 - Anything payment- or order-related: `supabase/functions/checkout/` and
-  `supabase/functions/paystack-webhook/` — read the comments at the top of
-  each file before changing either.
+  `supabase/functions/flutterwave-webhook/` — read the comments at the top
+  of each file before changing either.

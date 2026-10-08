@@ -65,15 +65,15 @@ const INTENTS: Intent[] = [
     id: 'pod',
     test: /\b(pay on delivery|cash on delivery|pod|pay when|pay later|before i pay)\b/i,
     handle: () => ({
-      body: 'Yes — pay on delivery is available in Lagos, Abuja and Port Harcourt. You open the package and check the item before you hand over cash or transfer. Everywhere else, pay online with Paystack: card, bank transfer or USSD.',
+      body: 'Yes — pay on delivery is available in Lagos, Abuja and Port Harcourt. You open the package and check the item before you hand over cash or transfer. Everywhere else, pay online with Flutterwave: card, bank transfer or USSD.',
       suggestions: ['What if the size is wrong?', 'How much is delivery?'],
     }),
   },
   {
     id: 'payment',
-    test: /\b(paystack|card|transfer|ussd|payment|pay online|bank)\b/i,
+    test: /\b(flutterwave|card|transfer|ussd|payment|pay online|bank)\b/i,
     handle: () => ({
-      body: 'Paystack handles the online payments — card, bank transfer, USSD and direct debit. Your card details go straight to Paystack, never to us. Pay on delivery is there too if you are in Lagos, Abuja or Port Harcourt.',
+      body: 'Flutterwave handles the online payments — card, bank transfer, USSD and direct debit. Your card details go straight to Flutterwave, never to us. Pay on delivery is there too if you are in Lagos, Abuja or Port Harcourt.',
       suggestions: ['Can I pay on delivery?', 'Is my payment secure?'],
     }),
   },

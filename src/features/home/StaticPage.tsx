@@ -9,7 +9,7 @@ const CONTENT: Record<string, { title: string; blocks: [string, string][] }> = {
       ['How long does delivery take?', 'Up to 14 days nationwide.'],
       ['What does delivery cost?', 'A flat ₦1,500 anywhere in Nigeria, free on orders above ₦30,000.'],
       ['Can I pay on delivery?', 'Yes, in Lagos, Abuja and Port Harcourt. Open the package and check the item before you hand over cash or transfer.'],
-      ['What payment methods work online?', 'Card, bank transfer, USSD and direct debit, all through Paystack. Your card details never touch our servers.'],
+      ['What payment methods work online?', 'Card, bank transfer, USSD and direct debit, all through Flutterwave. Your card details never touch our servers.'],
       ['What if the size is wrong?', 'Seven days to tell us. We arrange the pickup and either exchange it or refund you in full.'],
       ['Do you sell wholesale?', 'For schools and bulk orders, message us on WhatsApp and we will quote directly off the producer price.'],
     ],

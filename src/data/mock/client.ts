@@ -139,9 +139,9 @@ const orders: OrderRepository = {
   async placeOrder({ lines, draft }) {
     const reference = `TCH-${Date.now().toString(36).toUpperCase().slice(-6)}`
     const now = new Date()
-    // No real Paystack in mock mode — both methods confirm immediately so the
+    // No real Flutterwave in mock mode — both methods confirm immediately so the
     // storefront demo has a complete order to show. The Supabase client's
-    // `placeOrder` is the one that actually returns a Paystack authorization_url.
+    // `placeOrder` is the one that actually returns a Flutterwave authorization_url.
     const order: Order = {
       id: `ord_${reference}`,
       reference,
