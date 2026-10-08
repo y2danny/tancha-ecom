@@ -150,6 +150,9 @@ const orders: OrderRepository = {
     const result = await callFunction<{ order: any; authorization_url?: string }>('checkout', {
       lines,
       draft,
+      // Flutterwave requires a redirect_url (Paystack's callback_url was
+      // optional, which is why this was never sent before).
+      origin: window.location.origin,
     })
     return { order: mapOrder(result.order) as Order, authorizationUrl: result.authorization_url }
   },

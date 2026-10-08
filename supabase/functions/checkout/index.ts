@@ -167,7 +167,14 @@ Deno.serve(async (req) => {
   if (!flutterwaveSecret) {
     return json({ error: 'Flutterwave is not configured on the server yet (FLUTTERWAVE_SECRET_KEY secret missing)' }, 500)
   }
-  const origin = body.origin || Deno.env.get('PUBLIC_SITE_URL') || ''
+  // PUBLIC_SITE_URL wins when set, so a hand-crafted request can't point the
+  // post-payment redirect at some other site. Flutterwave rejects the call
+  // outright without a redirect_url, so bail with a readable error first.
+  const origin = (Deno.env.get('PUBLIC_SITE_URL') || body.origin || '').replace(/\/+$/, '')
+  if (!origin) {
+    await admin.from('orders').update({ status: 'cancelled' }).eq('id', order.id)
+    return json({ error: 'Payment redirect is not configured (set the PUBLIC_SITE_URL secret)' }, 500)
+  }
   const initRes = await fetch('https://api.flutterwave.com/v3/payments', {
     method: 'POST',
     headers: { Authorization: `Bearer ${flutterwaveSecret}`, 'Content-Type': 'application/json' },
@@ -175,7 +182,7 @@ Deno.serve(async (req) => {
       tx_ref: reference,
       amount: totalKobo / 100, // Flutterwave wants the major unit (naira), not kobo — unlike Paystack
       currency: 'NGN',
-      redirect_url: origin ? `${origin}/order/${reference}` : undefined,
+      redirect_url: `${origin}/order/${reference}`,
       customer: {
         email: draft.address.email,
         phonenumber: draft.address.phone,
