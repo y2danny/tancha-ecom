@@ -157,12 +157,12 @@ const orders: OrderRepository = {
     return { order: mapOrder(result.order) as Order, authorizationUrl: result.authorization_url }
   },
 
-  async getOrder(reference) {
+  async getOrder(reference, transactionId) {
     // Guest checkouts have no auth.uid(), so RLS can't match them to a row —
     // the lookup function reads with the service key and only ever returns
     // the one order whose reference was asked for.
     try {
-      const result = await callFunction<{ order: any }>('order-lookup', { reference })
+      const result = await callFunction<{ order: any }>('order-lookup', { reference, transactionId })
       return result.order ? mapOrder(result.order) : null
     } catch {
       return null

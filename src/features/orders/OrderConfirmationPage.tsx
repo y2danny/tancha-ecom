@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { CheckCircle2, Clock, MessageCircle, Package, Truck } from 'lucide-react'
 import { db } from '@/data'
 import { useAsync } from '@/hooks/useAsync'
@@ -10,9 +10,15 @@ import { ButtonLink } from '@/components/ui/Button'
 import type { Order } from '@/types/commerce'
 
 /** Flutterwave's redirect lands here before the webhook has necessarily landed —
- *  poll briefly rather than telling the customer "confirmed" too early. */
-function usePolledOrder(reference: string | undefined) {
-  const { data, loading } = useAsync(() => db.orders.getOrder(reference ?? ''), [reference], null as Order | null)
+ *  poll briefly rather than telling the customer "confirmed" too early.
+ *  Flutterwave appends `?transaction_id=...` to the redirect; passing it along
+ *  lets the server verify the payment itself if the webhook is late. */
+function usePolledOrder(reference: string | undefined, transactionId: string | undefined) {
+  const { data, loading } = useAsync(
+    () => db.orders.getOrder(reference ?? '', transactionId),
+    [reference, transactionId],
+    null as Order | null,
+  )
   const [order, setOrder] = useState<Order | null>(data)
 
   useEffect(() => setOrder(data), [data])
@@ -22,12 +28,12 @@ function usePolledOrder(reference: string | undefined) {
     let tries = 0
     const id = window.setInterval(async () => {
       tries += 1
-      const fresh = await db.orders.getOrder(reference ?? '')
+      const fresh = await db.orders.getOrder(reference ?? '', transactionId)
       if (fresh && fresh.status !== 'pending_payment') setOrder(fresh)
       if (tries >= 10) window.clearInterval(id)
     }, 3000)
     return () => window.clearInterval(id)
-  }, [order, reference])
+  }, [order, reference, transactionId])
 
   return { order, loading }
 }
@@ -35,7 +41,9 @@ function usePolledOrder(reference: string | undefined) {
 export function OrderConfirmationPage() {
   useSeo({ title: 'Order Confirmation', noindex: true })
   const { reference } = useParams<{ reference: string }>()
-  const { order, loading } = usePolledOrder(reference)
+  const [searchParams] = useSearchParams()
+  const transactionId = searchParams.get('transaction_id') ?? undefined
+  const { order, loading } = usePolledOrder(reference, transactionId)
 
   if (loading) {
     return <div className="mx-auto max-w-2xl px-4 py-24 text-center text-sm text-muted">Loading your order…</div>

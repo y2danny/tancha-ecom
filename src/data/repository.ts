@@ -42,7 +42,10 @@ export interface OrderRepository {
     lines: CartLine[]
     draft: CheckoutDraft
   }): Promise<{ order: Order; authorizationUrl?: string }>
-  getOrder(reference: string): Promise<Order | null>
+  /** `transactionId` is the payment provider's id from the post-payment
+   *  redirect, if there is one — lets the server re-check a still-pending
+   *  payment instead of waiting on the webhook. */
+  getOrder(reference: string, transactionId?: string): Promise<Order | null>
 }
 
 export interface DataClient {

@@ -63,7 +63,7 @@ supabase init                  # one-time — creates supabase/config.toml;
 supabase login                 # opens a browser to authenticate the CLI
 supabase link --project-ref oweyocwbtodadbxtsltv
 supabase functions deploy checkout
-supabase functions deploy flutterwave-webhook
+supabase functions deploy flutterwave-webhook --no-verify-jwt
 supabase functions deploy order-lookup
 supabase functions deploy invite-team-member
 ```

@@ -1,18 +1,19 @@
-// Deno Edge Function. Deploy with: supabase functions deploy flutterwave-webhook
+// Deno Edge Function. Deploy with:
+//   supabase functions deploy flutterwave-webhook --no-verify-jwt
 // Then set the resulting URL as the webhook URL in the Flutterwave dashboard
 // (Settings → Webhooks), and put the same string you set there as the
-// "Secret Hash" into the FLUTTERWAVE_SECRET_HASH secret below. Flutterwave's
+// "Secret Hash" into the FLUTTERWAVE_SECRET_HASH secret. Flutterwave's
 // webhook auth isn't an HMAC of the body like Paystack's — it's a static
 // shared secret that must come back unchanged in the `verif-hash` header.
 //
-// This is the ONLY thing allowed to mark an order paid. The client-side
-// redirect after checkout is for the customer's benefit — it is never
-// trusted to confirm payment, because a browser can be closed, spoofed, or
-// simply lie. On top of the header check, we also re-fetch the transaction
-// from Flutterwave's own API before trusting it, since a static shared
-// secret is weaker than an HMAC signature and is worth double-checking.
+// The header check only decides whether to bother looking. What actually
+// marks an order paid is the server-to-server verify call in
+// ../_shared/flutterwave.ts. Every decision is logged (never secrets), so
+// Supabase → Edge Functions → flutterwave-webhook → Logs says exactly why a
+// given call did or didn't confirm an order.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { json } from '../_shared/cors.ts'
+import { confirmFlutterwavePayment } from '../_shared/flutterwave.ts'
 
 function timingSafeEqual(a: string, b: string) {
   if (a.length !== b.length) return false
@@ -26,72 +27,41 @@ Deno.serve(async (req) => {
 
   const expectedHash = Deno.env.get('FLUTTERWAVE_SECRET_HASH')
   const secretKey = Deno.env.get('FLUTTERWAVE_SECRET_KEY')
-  const signature = req.headers.get('verif-hash')
+  const signature = req.headers.get('verif-hash') ?? req.headers.get('verifi-hash')
 
-  if (!expectedHash || !secretKey || !signature || !timingSafeEqual(signature, expectedHash)) {
+  if (!expectedHash || !secretKey) {
+    console.error('[flw-webhook] FLUTTERWAVE_SECRET_HASH or FLUTTERWAVE_SECRET_KEY secret is not set')
+    return json({ error: 'Not configured' }, 500)
+  }
+  if (!signature) {
+    console.warn('[flw-webhook] rejected: no verif-hash header on the request')
+    return json({ error: 'Invalid signature' }, 401)
+  }
+  if (!timingSafeEqual(signature, expectedHash)) {
+    console.warn('[flw-webhook] rejected: verif-hash does not match FLUTTERWAVE_SECRET_HASH')
     return json({ error: 'Invalid signature' }, 401)
   }
 
-  const event = JSON.parse(await req.text())
-  if (event.event !== 'charge.completed' || event.data?.status !== 'successful') {
+  let event: any
+  try {
+    event = JSON.parse(await req.text())
+  } catch {
+    console.warn('[flw-webhook] rejected: body is not JSON')
     return json({ received: true })
   }
 
-  const reference: string = event.data?.tx_ref
-  const transactionId = event.data?.id
-  if (!reference || !transactionId) return json({ received: true })
-
-  // Don't trust the webhook body alone — re-verify server-to-server against
-  // Flutterwave's own API before paying out, the same way the checkout
-  // function never trusts a price from the browser.
-  const verifyRes = await fetch(`https://api.flutterwave.com/v3/transactions/${transactionId}/verify`, {
-    headers: { Authorization: `Bearer ${secretKey}` },
-  })
-  const verifyJson = await verifyRes.json()
-  const tx = verifyJson?.data
-  if (
-    !verifyRes.ok ||
-    verifyJson.status !== 'success' ||
-    tx?.status !== 'successful' ||
-    tx?.tx_ref !== reference ||
-    tx?.currency !== 'NGN'
-  ) {
+  // v3 webhooks nest the transaction under `data`; accounts still on the
+  // older webhook format send it flat. Either way all we need is the id —
+  // the verify call is the source of truth for everything else.
+  const transactionId = event?.data?.id ?? event?.id
+  const eventName = event?.event ?? event?.['event.type'] ?? 'unknown'
+  if (!transactionId) {
+    console.warn(`[flw-webhook] ignored ${eventName}: no transaction id in payload`)
     return json({ received: true })
   }
 
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-
-  const { data: order } = await admin
-    .from('orders')
-    .select('*, order_items(*)')
-    .or(`reference.eq.${reference},flutterwave_reference.eq.${reference}`)
-    .maybeSingle()
-
-  if (!order) return json({ received: true }) // unknown reference — ack anyway, nothing to do
-  if (order.paid_at) return json({ received: true }) // already processed — idempotent
-
-  // The amount Flutterwave actually settled (in naira) must match what we
-  // charged for (in kobo), within a 1-kobo rounding tolerance.
-  const settledKobo = Math.round(tx.amount * 100)
-  if (Math.abs(settledKobo - order.total_kobo) > 1) return json({ received: true })
-
-  await admin
-    .from('orders')
-    .update({ status: 'confirmed', paid_at: new Date().toISOString() })
-    .eq('id', order.id)
-
-  const items = order.order_items ?? []
-  if (items.length) {
-    await admin.from('inventory_movements').insert(
-      items.map((it: any) => ({
-        product_id: it.product_id,
-        variant_id: it.variant_id,
-        delta: -it.quantity,
-        reason: 'sale',
-        order_id: order.id,
-      })),
-    )
-  }
-
+  const outcome = await confirmFlutterwavePayment(admin, secretKey, transactionId)
+  console.log(`[flw-webhook] ${eventName} tx ${transactionId}: ${outcome}`)
   return json({ received: true })
 })
