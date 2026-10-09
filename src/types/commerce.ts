@@ -47,11 +47,25 @@ export interface DeliveryAddress {
   landmark?: string
 }
 
+/** One line of a placed order, as snapshotted at checkout — what to pack. */
+export interface OrderItem {
+  productId: string
+  variantId: string | null
+  name: string
+  /** e.g. "Size: EU 36". Null for products without variants. */
+  variantLabel: string | null
+  quantity: number
+  unitPriceKobo: number
+}
+
 export interface Order {
   id: string
   reference: string
   status: OrderStatus
   lines: CartLine[]
+  items: OrderItem[]
+  /** When the payment was confirmed. Null for unpaid and pay-on-delivery orders. */
+  paidAt?: string | null
   totals: CartTotals
   address: DeliveryAddress
   paymentMethod: PaymentMethod

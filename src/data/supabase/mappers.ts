@@ -93,6 +93,7 @@ export function mapReview(row: any): Review {
 export function mapAddress(row: any): DeliveryAddress {
   return {
     fullName: row.full_name,
+    email: row.email ?? undefined,
     phone: row.phone,
     altPhone: row.alt_phone ?? undefined,
     city: row.city,
@@ -114,6 +115,19 @@ export function mapOrder(row: any): Order {
       quantity: it.quantity,
       unitPriceKobo: it.unit_price_kobo,
     })),
+    items: items.map((it: any) => ({
+      productId: it.product_id,
+      variantId: it.variant_id,
+      name: it.name_snapshot,
+      // Orders from before variant_label existed fall back to the variant's
+      // current label, when the query joined it in.
+      variantLabel:
+        it.variant_label ??
+        (it.product_variants ? `${it.product_variants.option_name}: ${it.product_variants.label}` : null),
+      quantity: it.quantity,
+      unitPriceKobo: it.unit_price_kobo,
+    })),
+    paidAt: row.paid_at ?? null,
     totals: {
       subtotalKobo: row.subtotal_kobo,
       deliveryKobo: row.delivery_kobo,

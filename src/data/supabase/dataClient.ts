@@ -11,6 +11,10 @@ import { mapCategory, mapDeal, mapOrder, mapProduct, mapReview, mapTeamMember } 
 
 const PRODUCT_SELECT = '*, product_variants(*)'
 
+/** Admin order queries join each line's variant so orders placed before
+ *  `variant_label` was snapshotted still show which size/colour to pack. */
+const ADMIN_ORDER_SELECT = '*, order_items(*, product_variants(option_name, label))'
+
 async function callFunction<T>(name: string, body: unknown): Promise<T> {
   const { data: sessionData } = await supabase.auth.getSession()
   const token = sessionData.session?.access_token ?? (import.meta.env.VITE_SUPABASE_ANON_KEY as string)
@@ -157,12 +161,16 @@ const orders: OrderRepository = {
     return { order: mapOrder(result.order) as Order, authorizationUrl: result.authorization_url }
   },
 
-  async getOrder(reference, transactionId) {
+  async getOrder(reference, payment) {
     // Guest checkouts have no auth.uid(), so RLS can't match them to a row —
     // the lookup function reads with the service key and only ever returns
     // the one order whose reference was asked for.
     try {
-      const result = await callFunction<{ order: any }>('order-lookup', { reference, transactionId })
+      const result = await callFunction<{ order: any }>('order-lookup', {
+        reference,
+        transactionId: payment?.transactionId,
+        status: payment?.status,
+      })
       return result.order ? mapOrder(result.order) : null
     } catch {
       return null
@@ -433,7 +441,7 @@ const admin: AdminRepository = {
   },
 
   async listAllOrders(filter) {
-    let builder = supabase.from('orders').select('*, order_items(*)').order('placed_at', { ascending: false })
+    let builder = supabase.from('orders').select(ADMIN_ORDER_SELECT).order('placed_at', { ascending: false })
     if (filter?.status) builder = builder.eq('status', filter.status)
     const { data, error } = await builder
     if (error) throw error
@@ -445,10 +453,15 @@ const admin: AdminRepository = {
       .from('orders')
       .update({ status })
       .eq('reference', reference)
-      .select('*, order_items(*)')
+      .select(ADMIN_ORDER_SELECT)
       .single()
     if (error) throw error
     return mapOrder(data)
+  },
+
+  async syncOrderPayment(reference) {
+    // order-lookup does the actual check against Flutterwave on the server.
+    await callFunction('order-lookup', { reference })
   },
 
   async listTeam() {

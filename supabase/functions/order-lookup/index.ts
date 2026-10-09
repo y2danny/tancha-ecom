@@ -6,22 +6,23 @@
 // (long, random, shown only to the person who just placed the order) — this
 // function trades that for read access to exactly one row, nothing else.
 //
-// It also backs up the Flutterwave webhook. After paying, Flutterwave sends
-// the customer to /order/<reference>?transaction_id=... — if the order is
-// still pending, that id is checked against Flutterwave's API (same code the
-// webhook uses), so a late or missing webhook can't strand a paid customer on
-// "waiting for confirmation". The browser only supplies the id to look up;
-// the payment is confirmed by Flutterwave's API, never by the browser.
+// For an unpaid Flutterwave order it also asks Flutterwave what actually
+// happened before answering (see ../_shared/flutterwave.ts), so the order
+// moves to "confirmed" or "cancelled" without depending on the webhook
+// arriving. The confirmation page passes along what Flutterwave put on the
+// redirect (`transaction_id`, `status=cancelled`); the admin Orders screen
+// passes just the reference. Either way the decision comes from Flutterwave's
+// API, never from what the browser claims.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { handlePreflight, json } from '../_shared/cors.ts'
-import { confirmFlutterwavePayment } from '../_shared/flutterwave.ts'
+import { syncFlutterwaveOrder } from '../_shared/flutterwave.ts'
 
 Deno.serve(async (req) => {
   const preflight = handlePreflight(req)
   if (preflight) return preflight
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
-  let body: { reference?: string; transactionId?: string }
+  let body: { reference?: string; transactionId?: string; status?: string }
   try {
     body = await req.json()
   } catch {
@@ -36,16 +37,15 @@ Deno.serve(async (req) => {
   let { data: order } = await read()
 
   const secretKey = Deno.env.get('FLUTTERWAVE_SECRET_KEY')
-  if (
-    order &&
-    order.status === 'pending_payment' &&
-    order.payment_method === 'flutterwave' &&
-    body.transactionId &&
-    secretKey
-  ) {
-    const outcome = await confirmFlutterwavePayment(admin, secretKey, body.transactionId, order.reference)
-    console.log(`[order-lookup] ${order.reference} tx ${body.transactionId}: ${outcome}`)
-    if (outcome === 'confirmed') ({ data: order } = await read())
+  if (order && secretKey) {
+    const outcome = await syncFlutterwaveOrder(admin, secretKey, order, {
+      transactionId: body.transactionId || undefined,
+      customerCancelled: body.status === 'cancelled',
+    })
+    if (outcome !== 'nothing to sync') {
+      console.log(`[order-lookup] ${order.reference}: ${outcome}`)
+      ;({ data: order } = await read())
+    }
   }
 
   return json({ order: order ?? null })

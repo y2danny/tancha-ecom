@@ -77,6 +77,7 @@ Deno.serve(async (req) => {
     product_id: string
     variant_id: string | null
     name_snapshot: string
+    variant_label: string | null
     unit_price_kobo: number
     quantity: number
   }[] = []
@@ -93,12 +94,14 @@ Deno.serve(async (req) => {
     let unitPriceKobo = product.price_kobo
     let availableStock = product.stock
     let variantId: string | null = null
+    let variantLabel: string | null = null
     if (line.variantId) {
       const variant = (product.product_variants ?? []).find((v: any) => v.id === line.variantId)
       if (!variant) return json({ error: `Variant not found for ${product.name}` }, 409)
       unitPriceKobo = variant.price_kobo
       availableStock = variant.stock
       variantId = variant.id
+      variantLabel = `${variant.option_name}: ${variant.label}`
     }
     if (availableStock < line.quantity) {
       return json({ error: `Only ${availableStock} left of ${product.name}` }, 409)
@@ -107,6 +110,7 @@ Deno.serve(async (req) => {
       product_id: product.id,
       variant_id: variantId,
       name_snapshot: product.name,
+      variant_label: variantLabel,
       unit_price_kobo: unitPriceKobo,
       quantity: line.quantity,
     })
@@ -131,6 +135,7 @@ Deno.serve(async (req) => {
       discount_kobo: 0,
       total_kobo: totalKobo,
       full_name: draft.address.fullName,
+      email: draft.address.email?.trim() || null,
       phone: draft.address.phone,
       alt_phone: draft.address.altPhone ?? null,
       street: draft.address.street,
@@ -145,7 +150,15 @@ Deno.serve(async (req) => {
 
   if (orderError || !order) return json({ error: orderError?.message ?? 'Could not create order' }, 500)
 
-  await admin.from('order_items').insert(orderItems.map((it) => ({ ...it, order_id: order.id })))
+  // An order with no line items is useless to whoever has to pack it, so a
+  // failed insert here fails the whole checkout rather than going unnoticed.
+  const { error: itemsError } = await admin
+    .from('order_items')
+    .insert(orderItems.map((it) => ({ ...it, order_id: order.id })))
+  if (itemsError) {
+    await admin.from('orders').update({ status: 'cancelled' }).eq('id', order.id)
+    return json({ error: `Could not save the order items: ${itemsError.message}` }, 500)
+  }
 
   // Pay on delivery is "sold" the moment the order is placed — nothing else
   // will ever confirm it, unlike Flutterwave's webhook.

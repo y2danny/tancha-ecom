@@ -27,9 +27,13 @@ export function DashboardPage() {
   const { data: products, loading: productsLoading } = useAsync(() => db.admin.listAllProducts(), [], [] as Product[])
 
   const today = new Date().toDateString()
-  const ordersToday = orders.filter((o) => new Date(o.placedAt).toDateString() === today)
+  // Unpaid and cancelled orders aren't sales — counting them inflated both
+  // numbers every time someone abandoned a Flutterwave payment.
+  const isRealSale = (o: Order) => o.status !== 'pending_payment' && o.status !== 'cancelled'
+  const ordersToday = orders.filter((o) => new Date(o.placedAt).toDateString() === today && isRealSale(o))
   const revenueToday = ordersToday.reduce((sum, o) => sum + o.totals.totalKobo, 0)
-  const pendingCount = orders.filter((o) => o.status === 'pending_payment' || o.status === 'confirmed').length
+  // Paid (or pay-on-delivery) and not yet packed — the seller's to-do list.
+  const pendingCount = orders.filter((o) => o.status === 'confirmed').length
   const lowStock = products.filter((p) => p.active && p.stock <= 10).sort((a, b) => a.stock - b.stock)
 
   return (

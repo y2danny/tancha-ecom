@@ -10,6 +10,7 @@ import { formatNaira } from '@/lib/format'
 import { useSeo } from '@/lib/seo'
 import { site } from '@/config/site'
 import type { DeliveryAddress, PaymentMethod } from '@/types/commerce'
+import { rememberPendingPayment } from '@/lib/pendingPayment'
 
 const STATES = [
   'Lagos', 'FCT — Abuja', 'Rivers', 'Oyo', 'Kano', 'Enugu', 'Kaduna', 'Delta',
@@ -64,11 +65,15 @@ export function CheckoutPage() {
         lines: rawLines,
         draft: { address, paymentMethod: method },
       })
-      clear()
       if (authorizationUrl) {
+        // Keep the cart until the payment is actually confirmed — if the
+        // customer cancels on Flutterwave's page they come back to a full cart,
+        // not an empty one. The confirmation page clears it once paid.
+        rememberPendingPayment(order.reference)
         window.location.href = authorizationUrl
         return
       }
+      clear()
       navigate(`/order/${order.reference}`)
     } catch (err) {
       setSubmitting(false)

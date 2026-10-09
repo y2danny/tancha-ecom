@@ -147,6 +147,18 @@ const orders: OrderRepository = {
       reference,
       status: 'confirmed',
       lines,
+      items: lines.map((l) => {
+        const product = productById.get(l.productId)
+        const variant = product?.variants.find((v) => v.id === l.variantId)
+        return {
+          productId: l.productId,
+          variantId: l.variantId,
+          name: product?.name ?? l.productId,
+          variantLabel: variant ? `${variant.optionName}: ${variant.label}` : null,
+          quantity: l.quantity,
+          unitPriceKobo: l.unitPriceKobo,
+        }
+      }),
       totals: totalsFor(lines),
       address: draft.address,
       paymentMethod: draft.paymentMethod,

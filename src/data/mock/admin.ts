@@ -194,6 +194,11 @@ export const mockAdmin: AdminRepository = {
     return wait(order, 200)
   },
 
+  async syncOrderPayment() {
+    // Mock orders are confirmed the moment they're placed — nothing to sync.
+    await wait(null)
+  },
+
   async listTeam() {
     return wait(teamStore.listTeam())
   },

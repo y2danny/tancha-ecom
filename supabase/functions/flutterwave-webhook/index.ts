@@ -13,7 +13,7 @@
 // given call did or didn't confirm an order.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { json } from '../_shared/cors.ts'
-import { confirmFlutterwavePayment } from '../_shared/flutterwave.ts'
+import { confirmFlutterwaveTransaction } from '../_shared/flutterwave.ts'
 
 function timingSafeEqual(a: string, b: string) {
   if (a.length !== b.length) return false
@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
   }
 
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-  const outcome = await confirmFlutterwavePayment(admin, secretKey, transactionId)
+  const outcome = await confirmFlutterwaveTransaction(admin, secretKey, transactionId)
   console.log(`[flw-webhook] ${eventName} tx ${transactionId}: ${outcome}`)
   return json({ received: true })
 })

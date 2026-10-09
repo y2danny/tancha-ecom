@@ -163,6 +163,7 @@ create table orders (
   paid_at            timestamptz,
   -- Delivery
   full_name    text not null,
+  email        text,
   phone        text not null,
   alt_phone    text,
   street       text not null,
@@ -185,6 +186,7 @@ create table order_items (
   variant_id     uuid references product_variants(id) on delete set null,
   -- Snapshot: a product renamed or repriced later must not rewrite history
   name_snapshot  text not null,
+  variant_label  text,           -- e.g. 'Size: EU 36', snapshotted like the name
   unit_price_kobo bigint not null,
   quantity       int not null check (quantity > 0)
 );

@@ -99,6 +99,9 @@ export interface AdminRepository {
   // Orders
   listAllOrders(filter?: { status?: OrderStatus }): Promise<import('./commerce').Order[]>
   updateOrderStatus(reference: string, status: OrderStatus, note?: string): Promise<import('./commerce').Order>
+  /** Asks the payment provider about an unpaid online order and updates it —
+   *  confirmed if the money landed, cancelled if it was abandoned. */
+  syncOrderPayment(reference: string): Promise<void>
 
   // Team (owner only, enforced again server-side by RLS)
   listTeam(): Promise<TeamMember[]>
